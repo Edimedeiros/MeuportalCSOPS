@@ -1,4 +1,4 @@
-# 🗂️ Meu Portal de Trabalhos
+# 🗂️ Meu Portal CS OPS
 
 Sistema web para gestão de demandas com Kanban, Dashboards, Formulários, Fluxogramas, Logs e Permissões.
 
