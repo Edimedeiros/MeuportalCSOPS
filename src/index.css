@@ -1,0 +1,901 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tema escuro */
+.theme-dark {
+  color: #e5e7eb;
+}
+.theme-dark .app-main,
+.theme-dark aside,
+.theme-dark header,
+.theme-dark section {
+  background-color: #0f172a !important;
+  color: #e5e7eb !important;
+}
+.theme-dark .bg-white,
+.theme-dark .bg-white\/80,
+.theme-dark .bg-white\/85,
+.theme-dark .bg-stone-50,
+.theme-dark .bg-stone-100,
+.theme-dark .bg-\[\#F7F4EF\],
+.theme-dark .bg-\[\#FAF8F5\],
+.theme-dark .bg-\[\#F2EEE7\] {
+  background-color: #111827 !important;
+  color: #e5e7eb !important;
+}
+.theme-dark .text-stone-950,
+.theme-dark .text-stone-900,
+.theme-dark .text-stone-800,
+.theme-dark .text-stone-700,
+.theme-dark .text-stone-600 {
+  color: #f9fafb !important;
+}
+.theme-dark .text-stone-500,
+.theme-dark .text-stone-400 {
+  color: #9ca3af !important;
+}
+.theme-dark .border-stone-100,
+.theme-dark .border-stone-200,
+.theme-dark .border-stone-300 {
+  border-color: #374151 !important;
+}
+.theme-dark input,
+.theme-dark select,
+.theme-dark textarea {
+  background-color: #0f172a !important;
+  color: #f9fafb !important;
+  border-color: #374151 !important;
+}
+.theme-dark input::placeholder,
+.theme-dark textarea::placeholder {
+  color: #6b7280 !important;
+}
+
+/* Tema Nibo inspirado no anexo: azul forte, cards claros e acentos vibrantes */
+.theme-plaky {
+  color: #ffffff;
+}
+.theme-plaky .app-main,
+.theme-plaky aside,
+.theme-plaky header,
+.theme-plaky section {
+  background: linear-gradient(135deg, #00377d 0%, #006fc9 100%) !important;
+  color: #ffffff !important;
+}
+.theme-plaky .bg-white,
+.theme-plaky .bg-white\/80,
+.theme-plaky .bg-white\/85 {
+  background-color: #ffffff !important;
+  color: #243244 !important;
+}
+.theme-plaky .bg-\[\#F7F4EF\],
+.theme-plaky .bg-\[\#FAF8F5\],
+.theme-plaky .bg-\[\#F2EEE7\],
+.theme-plaky .bg-stone-50,
+.theme-plaky .bg-stone-100 {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+.theme-plaky .text-stone-950,
+.theme-plaky .text-stone-900,
+.theme-plaky .text-stone-800,
+.theme-plaky .text-stone-700,
+.theme-plaky .text-stone-600 {
+  color: #ffffff !important;
+}
+.theme-plaky .text-stone-500,
+.theme-plaky .text-stone-400 {
+  color: #d6ecff !important;
+}
+.theme-plaky .border-stone-100,
+.theme-plaky .border-stone-200,
+.theme-plaky .border-stone-300 {
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+.theme-plaky input,
+.theme-plaky select,
+.theme-plaky textarea {
+  background-color: #ffffff !important;
+  color: #243244 !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
+.theme-plaky input::placeholder,
+.theme-plaky textarea::placeholder {
+  color: #64748b !important;
+}
+.theme-plaky .shadow-sm,
+.theme-plaky .shadow-2xl {
+  box-shadow: 0 14px 36px rgba(0, 24, 73, 0.22) !important;
+}
+.theme-plaky button:hover {
+  filter: brightness(1.04);
+}
+.theme-plaky .bg-stone-950 {
+  background-color: #002f6c !important;
+}
+.theme-plaky .bg-emerald-50 {
+  background-color: #ddfbe9 !important;
+}
+.theme-plaky .text-emerald-700 {
+  color: #03613a !important;
+}
+
+/* Ajustes de legibilidade e acabamento do tema Azul */
+.theme-plaky {
+  --azul-bg-1: #003b7a;
+  --azul-bg-2: #0072ce;
+  --azul-card: #ffffff;
+  --azul-card-soft: #f4f9ff;
+  --azul-text: #172033;
+  --azul-muted: #52657a;
+  --azul-border: #d8e8f8;
+  color: #ffffff;
+}
+.theme-plaky .app-main,
+.theme-plaky aside,
+.theme-plaky header,
+.theme-plaky section {
+  background: linear-gradient(135deg, var(--azul-bg-1) 0%, var(--azul-bg-2) 100%) !important;
+  color: #ffffff !important;
+}
+.theme-plaky .bg-white,
+.theme-plaky .bg-white\/80,
+.theme-plaky .bg-white\/85,
+.theme-plaky .rounded-3xl.border,
+.theme-plaky .rounded-\[1\.75rem\].border {
+  background-color: var(--azul-card) !important;
+  color: var(--azul-text) !important;
+  border-color: var(--azul-border) !important;
+}
+.theme-plaky .bg-white *,
+.theme-plaky .bg-white\/80 *,
+.theme-plaky .bg-white\/85 *,
+.theme-plaky .rounded-3xl.border *,
+.theme-plaky .rounded-\[1\.75rem\].border * {
+  color: inherit;
+}
+.theme-plaky .bg-white .text-stone-950,
+.theme-plaky .bg-white .text-stone-900,
+.theme-plaky .bg-white .text-stone-800,
+.theme-plaky .bg-white .text-stone-700,
+.theme-plaky .bg-white\/80 .text-stone-950,
+.theme-plaky .bg-white\/80 .text-stone-900,
+.theme-plaky .bg-white\/80 .text-stone-800,
+.theme-plaky .bg-white\/80 .text-stone-700,
+.theme-plaky .bg-white\/85 .text-stone-950,
+.theme-plaky .bg-white\/85 .text-stone-900,
+.theme-plaky .bg-white\/85 .text-stone-800,
+.theme-plaky .bg-white\/85 .text-stone-700,
+.theme-plaky .rounded-3xl.border .text-stone-950,
+.theme-plaky .rounded-3xl.border .text-stone-900,
+.theme-plaky .rounded-3xl.border .text-stone-800,
+.theme-plaky .rounded-3xl.border .text-stone-700,
+.theme-plaky .rounded-\[1\.75rem\].border .text-stone-950,
+.theme-plaky .rounded-\[1\.75rem\].border .text-stone-900,
+.theme-plaky .rounded-\[1\.75rem\].border .text-stone-800,
+.theme-plaky .rounded-\[1\.75rem\].border .text-stone-700 {
+  color: var(--azul-text) !important;
+}
+.theme-plaky .bg-white .text-stone-600,
+.theme-plaky .bg-white .text-stone-500,
+.theme-plaky .bg-white .text-stone-400,
+.theme-plaky .bg-white\/80 .text-stone-600,
+.theme-plaky .bg-white\/80 .text-stone-500,
+.theme-plaky .bg-white\/80 .text-stone-400,
+.theme-plaky .bg-white\/85 .text-stone-600,
+.theme-plaky .bg-white\/85 .text-stone-500,
+.theme-plaky .bg-white\/85 .text-stone-400,
+.theme-plaky .rounded-3xl.border .text-stone-600,
+.theme-plaky .rounded-3xl.border .text-stone-500,
+.theme-plaky .rounded-3xl.border .text-stone-400,
+.theme-plaky .rounded-\[1\.75rem\].border .text-stone-600,
+.theme-plaky .rounded-\[1\.75rem\].border .text-stone-500,
+.theme-plaky .rounded-\[1\.75rem\].border .text-stone-400 {
+  color: var(--azul-muted) !important;
+}
+.theme-plaky .bg-stone-50,
+.theme-plaky .bg-stone-100 {
+  background-color: var(--azul-card-soft) !important;
+  color: var(--azul-text) !important;
+}
+.theme-plaky .bg-stone-50 .text-stone-950,
+.theme-plaky .bg-stone-50 .text-stone-900,
+.theme-plaky .bg-stone-50 .text-stone-800,
+.theme-plaky .bg-stone-50 .text-stone-700,
+.theme-plaky .bg-stone-100 .text-stone-950,
+.theme-plaky .bg-stone-100 .text-stone-900,
+.theme-plaky .bg-stone-100 .text-stone-800,
+.theme-plaky .bg-stone-100 .text-stone-700 {
+  color: var(--azul-text) !important;
+}
+.theme-plaky .bg-stone-50 .text-stone-600,
+.theme-plaky .bg-stone-50 .text-stone-500,
+.theme-plaky .bg-stone-50 .text-stone-400,
+.theme-plaky .bg-stone-100 .text-stone-600,
+.theme-plaky .bg-stone-100 .text-stone-500,
+.theme-plaky .bg-stone-100 .text-stone-400 {
+  color: var(--azul-muted) !important;
+}
+.theme-plaky input,
+.theme-plaky select,
+.theme-plaky textarea {
+  background-color: #ffffff !important;
+  color: var(--azul-text) !important;
+  border-color: var(--azul-border) !important;
+}
+.theme-plaky input::placeholder,
+.theme-plaky textarea::placeholder {
+  color: #7b8fa4 !important;
+}
+.theme-plaky button.bg-stone-950,
+.theme-plaky .bg-stone-950 {
+  background-color: #002f6c !important;
+  color: #ffffff !important;
+}
+.theme-plaky button.bg-stone-950 *,
+.theme-plaky .bg-stone-950 * {
+  color: #ffffff !important;
+}
+.theme-plaky .border-stone-100,
+.theme-plaky .border-stone-200,
+.theme-plaky .border-stone-300 {
+  border-color: var(--azul-border) !important;
+}
+.theme-plaky .text-emerald-700 { color: #03613a !important; }
+.theme-plaky .text-red-700 { color: #b91c1c !important; }
+.theme-plaky .text-amber-700 { color: #92400e !important; }
+.theme-plaky .text-sky-700 { color: #0369a1 !important; }
+.theme-plaky .text-violet-700 { color: #6d28d9 !important; }
+.theme-plaky .bg-emerald-50 { background-color: #ddfbe9 !important; }
+.theme-plaky .bg-red-50 { background-color: #fee2e2 !important; }
+.theme-plaky .bg-amber-50 { background-color: #fef3c7 !important; }
+.theme-plaky .bg-sky-50 { background-color: #e0f2fe !important; }
+.theme-plaky .bg-violet-50 { background-color: #ede9fe !important; }
+.theme-plaky .shadow-sm,
+.theme-plaky .shadow-2xl {
+  box-shadow: 0 16px 42px rgba(0, 27, 84, 0.22) !important;
+}
+
+/* Correção final: quando o próprio elemento branco também tem classe text-stone-* */
+.theme-plaky .bg-white.text-stone-950,
+.theme-plaky .bg-white.text-stone-900,
+.theme-plaky .bg-white.text-stone-800,
+.theme-plaky .bg-white.text-stone-700,
+.theme-plaky .bg-white\/80.text-stone-950,
+.theme-plaky .bg-white\/80.text-stone-900,
+.theme-plaky .bg-white\/80.text-stone-800,
+.theme-plaky .bg-white\/80.text-stone-700,
+.theme-plaky .bg-white\/85.text-stone-950,
+.theme-plaky .bg-white\/85.text-stone-900,
+.theme-plaky .bg-white\/85.text-stone-800,
+.theme-plaky .bg-white\/85.text-stone-700,
+.theme-plaky button.bg-white.text-stone-950,
+.theme-plaky button.bg-white.text-stone-900,
+.theme-plaky button.bg-white.text-stone-800,
+.theme-plaky button.bg-white.text-stone-700 {
+  color: var(--azul-text) !important;
+}
+.theme-plaky .bg-white.text-stone-600,
+.theme-plaky .bg-white.text-stone-500,
+.theme-plaky .bg-white.text-stone-400,
+.theme-plaky .bg-white\/80.text-stone-600,
+.theme-plaky .bg-white\/80.text-stone-500,
+.theme-plaky .bg-white\/80.text-stone-400,
+.theme-plaky .bg-white\/85.text-stone-600,
+.theme-plaky .bg-white\/85.text-stone-500,
+.theme-plaky .bg-white\/85.text-stone-400,
+.theme-plaky button.bg-white.text-stone-600,
+.theme-plaky button.bg-white.text-stone-500,
+.theme-plaky button.bg-white.text-stone-400 {
+  color: var(--azul-muted) !important;
+}
+.theme-plaky .hover\:bg-white:hover {
+  background-color: #ffffff !important;
+  color: var(--azul-text) !important;
+}
+.theme-plaky .hover\:text-stone-800:hover,
+.theme-plaky .hover\:text-stone-900:hover,
+.theme-plaky .hover\:text-stone-700:hover {
+  color: var(--azul-text) !important;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Ajustes finais de contraste por tema e cabeçalho dinâmico
+   ────────────────────────────────────────────────────────────── */
+
+/* Cabeçalho principal: no tema Azul e Escuro, título/subtítulo precisam ser claros */
+.theme-plaky .topbar,
+.theme-dark .topbar {
+  background: transparent !important;
+}
+.theme-plaky .topbar .page-title,
+.theme-plaky .topbar .page-subtitle,
+.theme-dark .topbar .page-title,
+.theme-dark .topbar .page-subtitle {
+  color: #ffffff !important;
+}
+.theme-plaky .topbar input {
+  background: #ffffff !important;
+  color: #172033 !important;
+}
+.theme-dark .topbar input {
+  background: #111827 !important;
+  color: #f9fafb !important;
+  border-color: #334155 !important;
+}
+
+/* O selo de usuário foi para o menu lateral; garantir leitura em todos os temas */
+.theme-plaky aside .bg-emerald-50,
+.theme-dark aside .bg-emerald-50 {
+  background-color: #dcfce7 !important;
+  color: #14532d !important;
+  border-color: #bbf7d0 !important;
+}
+
+/* Tema Azul: corrigir textos em áreas que ficam sobre o fundo azul */
+.theme-plaky section > h3,
+.theme-plaky section > p,
+.theme-plaky .app-main > section > div > div > h3,
+.theme-plaky .app-main > section > div > div > p {
+  color: #ffffff !important;
+}
+.theme-plaky .page-title,
+.theme-plaky .page-subtitle {
+  color: #ffffff !important;
+}
+
+/* Tema Azul: cards continuam claros, mas com texto escuro legível */
+.theme-plaky .bg-white,
+.theme-plaky .rounded-3xl.border.bg-white,
+.theme-plaky .rounded-\[2rem\].border.bg-white {
+  background-color: #ffffff !important;
+  color: #172033 !important;
+}
+.theme-plaky .bg-white h1,
+.theme-plaky .bg-white h2,
+.theme-plaky .bg-white h3,
+.theme-plaky .bg-white h4,
+.theme-plaky .bg-white p,
+.theme-plaky .bg-white span,
+.theme-plaky .bg-white label,
+.theme-plaky .bg-white th,
+.theme-plaky .bg-white td {
+  color: inherit;
+}
+
+/* Botão/cartão de seleção do tema Azul precisa ter texto branco dentro de card claro */
+.theme-choice-blue,
+.theme-choice-blue * {
+  color: #ffffff !important;
+}
+.theme-choice-blue {
+  background-color: #00458f !important;
+  border-color: #18a9e6 !important;
+}
+.theme-choice-blue:hover {
+  background-color: #005fb8 !important;
+}
+
+/* Fluxogramas: itens ativos não podem ficar preto com texto preto */
+.flow-list-item-active {
+  background: #00316d !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+.flow-list-item-active,
+.flow-list-item-active * {
+  color: #ffffff !important;
+}
+.theme-plaky .flow-list-item:not(.flow-list-item-active) {
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #172033 !important;
+}
+.theme-plaky .flow-list-item:not(.flow-list-item-active) * {
+  color: #172033 !important;
+}
+.theme-plaky .flow-canvas-card {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #172033 !important;
+}
+.theme-plaky .flow-canvas-header {
+  background: #ffffff !important;
+  color: #172033 !important;
+}
+.theme-plaky .flow-canvas {
+  background: #f8fbff !important;
+}
+.theme-plaky .react-flow__renderer,
+.theme-plaky .react-flow__pane {
+  background: #f8fbff !important;
+}
+
+/* Tema escuro: evitar blocos pretos indistintos sobre fundo preto */
+.theme-dark .app-main,
+.theme-dark aside,
+.theme-dark header,
+.theme-dark section {
+  background-color: #0b1220 !important;
+  color: #e5e7eb !important;
+}
+.theme-dark .bg-white,
+.theme-dark .bg-white\/80,
+.theme-dark .bg-white\/85,
+.theme-dark .rounded-3xl.border,
+.theme-dark .rounded-\[1\.75rem\].border,
+.theme-dark .rounded-\[2rem\].border {
+  background-color: #111827 !important;
+  color: #e5e7eb !important;
+  border-color: #334155 !important;
+}
+.theme-dark .bg-stone-50,
+.theme-dark .bg-stone-100,
+.theme-dark .bg-\[\#F7F4EF\],
+.theme-dark .bg-\[\#FAF8F5\],
+.theme-dark .bg-\[\#F2EEE7\] {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+.theme-dark .text-stone-950,
+.theme-dark .text-stone-900,
+.theme-dark .text-stone-800,
+.theme-dark .text-stone-700,
+.theme-dark .text-stone-600 {
+  color: #f8fafc !important;
+}
+.theme-dark .text-stone-500,
+.theme-dark .text-stone-400 {
+  color: #cbd5e1 !important;
+}
+.theme-dark input,
+.theme-dark select,
+.theme-dark textarea {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+.theme-dark input::placeholder,
+.theme-dark textarea::placeholder {
+  color: #94a3b8 !important;
+}
+.theme-dark .security-action {
+  background-color: #1f2937 !important;
+  border-color: #334155 !important;
+}
+.theme-dark .security-action:hover {
+  background-color: #273449 !important;
+}
+.theme-dark .flow-list-item:not(.flow-list-item-active) {
+  background: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+.theme-dark .flow-canvas-card,
+.theme-dark .flow-canvas-header {
+  background: #111827 !important;
+  color: #e5e7eb !important;
+  border-color: #334155 !important;
+}
+.theme-dark .flow-canvas {
+  background: #0f172a !important;
+}
+.theme-dark .react-flow__renderer,
+.theme-dark .react-flow__pane {
+  background: #0f172a !important;
+}
+
+/* Segurança: deixa cada item com cara de card, mais profissional */
+.security-action {
+  min-height: 64px;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Refinamento visual final: cabeçalho único, contraste e temas
+   ────────────────────────────────────────────────────────────── */
+
+/* Tema claro: mantém cartões ativos escuros como estavam antes */
+.theme-light .flow-list-item-active,
+.theme-light .flow-list-item-active * {
+  background: #0c0a09 !important;
+  color: #ffffff !important;
+  border-color: #0c0a09 !important;
+}
+.theme-light .flow-list-item:not(.flow-list-item-active) {
+  background: #f7f7f6 !important;
+  color: #1f2937 !important;
+}
+.theme-light .flow-list-item:not(.flow-list-item-active):hover {
+  background: #efefed !important;
+  color: #111827 !important;
+}
+
+/* Tema azul: todo texto que fica diretamente sobre fundo azul deve ser branco. */
+.theme-plaky .topbar .page-title,
+.theme-plaky .topbar .page-subtitle,
+.theme-plaky .app-main > section,
+.theme-plaky .app-main > section > *,
+.theme-plaky .app-main > section h3:not(.bg-white h3):not(.rounded-3xl h3),
+.theme-plaky .app-main > section h4:not(.bg-white h4):not(.rounded-3xl h4),
+.theme-plaky .app-main > section p:not(.bg-white p):not(.rounded-3xl p) {
+  color: #ffffff !important;
+}
+.theme-plaky .topbar {
+  border-color: rgba(255,255,255,.22) !important;
+}
+.theme-plaky .topbar .page-title,
+.theme-plaky .topbar .page-subtitle {
+  text-shadow: 0 1px 0 rgba(0,0,0,.16);
+}
+
+/* Tema azul: o menu lateral e áreas de fluxograma usam texto claro em painéis azuis. */
+.theme-plaky aside:not(.flow-sidebar),
+.theme-plaky aside:not(.flow-sidebar) * {
+  color: #ffffff !important;
+}
+.theme-plaky aside:not(.flow-sidebar) .bg-white,
+.theme-plaky aside:not(.flow-sidebar) .bg-white * {
+  color: #12233a !important;
+}
+.theme-plaky .flow-sidebar {
+  background: rgba(0, 49, 109, .52) !important;
+  border-color: rgba(255,255,255,.24) !important;
+  color: #ffffff !important;
+}
+.theme-plaky .flow-sidebar h4,
+.theme-plaky .flow-sidebar p,
+.theme-plaky .flow-sidebar label,
+.theme-plaky .flow-sidebar span {
+  color: #ffffff !important;
+}
+.theme-plaky .flow-sidebar input {
+  background: #ffffff !important;
+  color: #102033 !important;
+}
+.theme-plaky .flow-list-item-active,
+.theme-plaky .flow-list-item-active * {
+  background: #003b7a !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,.2) !important;
+}
+.theme-plaky .flow-list-item:not(.flow-list-item-active) {
+  background: rgba(255,255,255,.94) !important;
+  color: #102033 !important;
+}
+.theme-plaky .flow-list-item:not(.flow-list-item-active) * {
+  color: #102033 !important;
+}
+.theme-plaky .flow-list-item:not(.flow-list-item-active):hover {
+  background: #ffffff !important;
+}
+
+/* A tela do fluxograma precisa ser fosca/confortável, não brilhante. */
+.flow-canvas-card {
+  background: #f3f0e8 !important;
+}
+.flow-canvas-header {
+  background: #faf8f4 !important;
+}
+.flow-canvas {
+  background: #ede8de !important;
+}
+.theme-plaky .flow-canvas-card {
+  background: rgba(7, 67, 125, .62) !important;
+  border-color: rgba(255,255,255,.22) !important;
+  color: #ffffff !important;
+}
+.theme-plaky .flow-canvas-header {
+  background: rgba(6, 49, 96, .74) !important;
+  border-color: rgba(255,255,255,.18) !important;
+  color: #ffffff !important;
+}
+.theme-plaky .flow-canvas-header input,
+.theme-plaky .flow-canvas-header p {
+  color: #ffffff !important;
+}
+.theme-plaky .flow-canvas {
+  background: #0b5f9c !important;
+}
+.theme-plaky .react-flow__renderer,
+.theme-plaky .react-flow__pane {
+  background: #0b5f9c !important;
+}
+.theme-dark .flow-canvas-card {
+  background: #121b2d !important;
+  border-color: #293548 !important;
+}
+.theme-dark .flow-canvas-header {
+  background: #151f32 !important;
+  border-color: #293548 !important;
+}
+.theme-dark .flow-canvas {
+  background: #101827 !important;
+}
+.theme-dark .react-flow__renderer,
+.theme-dark .react-flow__pane {
+  background: #101827 !important;
+}
+
+/* Tema escuro: hover com fundo claro precisa mudar texto para escuro também. */
+.theme-dark .hover\:bg-white:hover,
+.theme-dark .hover\:bg-stone-50:hover,
+.theme-dark .hover\:bg-stone-100:hover {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+}
+.theme-dark .hover\:bg-white:hover *,
+.theme-dark .hover\:bg-stone-50:hover *,
+.theme-dark .hover\:bg-stone-100:hover * {
+  color: #111827 !important;
+}
+.theme-dark button:hover,
+.theme-dark .security-action:hover {
+  color: inherit;
+}
+.theme-dark .security-action:hover,
+.theme-dark .security-action:hover * {
+  background-color: #243044 !important;
+  color: #f8fafc !important;
+}
+.theme-dark .flow-list-item:not(.flow-list-item-active):hover,
+.theme-dark .flow-list-item:not(.flow-list-item-active):hover * {
+  background: #263449 !important;
+  color: #ffffff !important;
+}
+
+/* Tema azul: card de seleção do tema Azul sempre legível dentro das configurações. */
+.theme-plaky .theme-choice-blue,
+.theme-plaky .theme-choice-blue * {
+  color: #ffffff !important;
+}
+.theme-plaky .theme-choice-blue {
+  background: linear-gradient(135deg, #003b7a, #006fc9) !important;
+  border-color: #7dd3fc !important;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Correções finais solicitadas: fluxogramas, tema escuro degradê e contrastes
+   ────────────────────────────────────────────────────────────── */
+
+/* Remove completamente a marca/caixinha de atribuição do React Flow no canto inferior. */
+.react-flow__attribution,
+.react-flow__attribution a {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Pastas e fluxogramas sempre precisam ter limite visual claro entre um item e outro. */
+.flow-list-item {
+  border: 1px solid rgba(120, 113, 108, 0.22) !important;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+.theme-dark .flow-list-item {
+  border-color: rgba(148, 163, 184, 0.22) !important;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+}
+.theme-plaky .flow-list-item {
+  border-color: rgba(255, 255, 255, 0.32) !important;
+}
+
+/* Tema escuro reescrito com degradê tecnológico fosco. */
+.theme-dark,
+.theme-dark body {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(55, 65, 81, 0.38) 0%, rgba(17, 24, 39, 0.18) 30%, transparent 55%),
+    radial-gradient(circle at 74% 18%, rgba(71, 85, 105, 0.28) 0%, rgba(15, 23, 42, 0.10) 28%, transparent 54%),
+    linear-gradient(135deg, #05070c 0%, #111827 46%, #1f2937 100%) !important;
+  color: #f8fafc !important;
+}
+.theme-dark .app-main,
+.theme-dark aside,
+.theme-dark header,
+.theme-dark section {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(51, 65, 85, 0.42) 0%, rgba(15, 23, 42, 0.16) 30%, transparent 52%),
+    radial-gradient(circle at 80% 10%, rgba(71, 85, 105, 0.25) 0%, transparent 48%),
+    linear-gradient(135deg, #070b13 0%, #111827 48%, #202a38 100%) !important;
+  color: #f8fafc !important;
+}
+.theme-dark .topbar {
+  background: rgba(7, 11, 19, 0.78) !important;
+  border-color: rgba(148, 163, 184, 0.20) !important;
+}
+.theme-dark .bg-white,
+.theme-dark .bg-white\/80,
+.theme-dark .bg-white\/85,
+.theme-dark .rounded-3xl.border,
+.theme-dark .rounded-\[1\.75rem\].border,
+.theme-dark .rounded-\[2rem\].border {
+  background: rgba(17, 24, 39, 0.82) !important;
+  color: #f8fafc !important;
+  border-color: rgba(148, 163, 184, 0.22) !important;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28) !important;
+}
+.theme-dark .bg-stone-50,
+.theme-dark .bg-stone-100,
+.theme-dark .bg-\[\#F7F4EF\],
+.theme-dark .bg-\[\#FAF8F5\],
+.theme-dark .bg-\[\#F2EEE7\] {
+  background: rgba(30, 41, 59, 0.76) !important;
+  color: #e5e7eb !important;
+}
+.theme-dark .flow-sidebar {
+  background: rgba(9, 13, 24, 0.78) !important;
+  border-color: rgba(148, 163, 184, 0.24) !important;
+  color: #f8fafc !important;
+}
+.theme-dark .flow-list-item-active,
+.theme-dark .flow-list-item-active * {
+  background: linear-gradient(135deg, #1f2937, #303b4d) !important;
+  color: #ffffff !important;
+  border-color: rgba(226, 232, 240, 0.26) !important;
+}
+.theme-dark .flow-list-item:not(.flow-list-item-active) {
+  background: rgba(30, 41, 59, 0.82) !important;
+  color: #e5e7eb !important;
+}
+.theme-dark .flow-list-item:not(.flow-list-item-active):hover,
+.theme-dark .flow-list-item:not(.flow-list-item-active):hover * {
+  background: #f8fafc !important;
+  color: #111827 !important;
+}
+.theme-dark .flow-canvas-card {
+  background: rgba(10, 15, 26, 0.84) !important;
+  border-color: rgba(148, 163, 184, 0.24) !important;
+}
+.theme-dark .flow-canvas-header {
+  background: rgba(8, 12, 22, 0.82) !important;
+  border-color: rgba(148, 163, 184, 0.20) !important;
+}
+.theme-dark .flow-canvas {
+  background:
+    radial-gradient(circle at 30% 8%, rgba(75, 85, 99, 0.20), transparent 36%),
+    radial-gradient(circle at 75% 80%, rgba(55, 65, 81, 0.18), transparent 42%),
+    #0d1423 !important;
+}
+.theme-dark .react-flow__renderer,
+.theme-dark .react-flow__pane {
+  background: transparent !important;
+}
+.theme-dark .react-flow__background {
+  opacity: 0.28 !important;
+}
+
+/* Tema Azul: qualquer texto direto na lateral/área de fluxo deve ficar branco; cards claros continuam com texto escuro. */
+.theme-plaky .flow-sidebar,
+.theme-plaky .flow-sidebar > h4,
+.theme-plaky .flow-sidebar > h3,
+.theme-plaky .flow-sidebar > p,
+.theme-plaky .flow-sidebar > span,
+.theme-plaky .flow-sidebar .text-stone-900,
+.theme-plaky .flow-sidebar .text-stone-800,
+.theme-plaky .flow-sidebar .text-stone-700 {
+  color: #ffffff !important;
+}
+.theme-plaky .flow-sidebar .flow-list-item:not(.flow-list-item-active),
+.theme-plaky .flow-sidebar .flow-list-item:not(.flow-list-item-active) * {
+  color: #102033 !important;
+}
+.theme-plaky .flow-sidebar .flow-list-item-active,
+.theme-plaky .flow-sidebar .flow-list-item-active * {
+  color: #ffffff !important;
+}
+.theme-plaky .flow-canvas-card,
+.theme-plaky .flow-canvas-card *:not(.react-flow__node):not(.react-flow__node *) {
+  color: #ffffff !important;
+}
+.theme-plaky .flow-canvas {
+  background: #0a5b91 !important;
+}
+.theme-plaky .react-flow__renderer,
+.theme-plaky .react-flow__pane {
+  background: transparent !important;
+}
+.theme-plaky .react-flow__background {
+  opacity: 0.32 !important;
+}
+
+/* Evita corte visual do nome do fluxograma. */
+.flow-canvas-header input {
+  min-width: 0;
+  text-overflow: clip;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Ajustes finais: selo por tema, ações com ícones e edição inline
+   ────────────────────────────────────────────────────────────── */
+.role-badge {
+  border-radius: 999px !important;
+  padding: 0.32rem 0.75rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+.theme-light .role-badge-editor {
+  background: #dcfce7 !important;
+  color: #14532d !important;
+  border-color: #bbf7d0 !important;
+}
+.theme-light .role-badge-viewer {
+  background: #f5f5f4 !important;
+  color: #44403c !important;
+  border-color: #e7e5e4 !important;
+}
+.theme-plaky .role-badge-editor {
+  background: rgba(255,255,255,.16) !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,.42) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12) !important;
+}
+.theme-plaky .role-badge-viewer {
+  background: rgba(255,255,255,.10) !important;
+  color: #eaf6ff !important;
+  border-color: rgba(255,255,255,.32) !important;
+}
+.theme-dark .role-badge-editor {
+  background: linear-gradient(135deg, rgba(34,197,94,.22), rgba(20,184,166,.14)) !important;
+  color: #bbf7d0 !important;
+  border-color: rgba(134,239,172,.35) !important;
+}
+.theme-dark .role-badge-viewer {
+  background: rgba(148,163,184,.12) !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(148,163,184,.28) !important;
+}
+
+.icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: .75rem;
+  border: 1px solid transparent;
+  color: inherit;
+  transition: .15s ease;
+}
+.icon-action:hover {
+  background: rgba(255,255,255,.72);
+  color: #111827 !important;
+  border-color: rgba(148,163,184,.35);
+}
+.icon-action-danger:hover {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: #fecaca !important;
+}
+.theme-dark .icon-action:hover {
+  background: rgba(248,250,252,.95) !important;
+  color: #111827 !important;
+}
+.theme-plaky .flow-list-item-active .icon-action:hover {
+  background: rgba(255,255,255,.95) !important;
+  color: #0f172a !important;
+}
+.theme-light .flow-list-item-active .icon-action:hover {
+  background: rgba(255,255,255,.95) !important;
+  color: #0f172a !important;
+}
+.flow-list-item input {
+  color: #111827 !important;
+}
+.theme-dark .flow-list-item input {
+  background: rgba(15,23,42,.9) !important;
+  color: #f8fafc !important;
+  border-color: rgba(148,163,184,.32) !important;
+}
+.theme-plaky .flow-list-item input {
+  background: #ffffff !important;
+  color: #102033 !important;
+}
