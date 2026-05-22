@@ -128,3 +128,20 @@ Substitua `SEU_USUARIO` pelo seu usuário do GitHub.
 - [x] Tooltip nos cards com solicitante, setor e prazo
 - [x] Tag "Concluído" automática ao mover card para fase final
 - [x] Busca em tempo real nos cards
+
+
+## Supabase Auth
+
+Esta versão já tem a primeira integração real com Supabase:
+
+- Cadastro real com e-mail e senha
+- Login real com e-mail e senha
+- Login com Google/Gmail via Supabase Auth
+- Logout real
+- Uso das variáveis de ambiente da Vercel:
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+
+No ambiente local, crie um arquivo `.env` na raiz do projeto usando o `.env.example` como base.
+
+Na Vercel, cadastre as mesmas variáveis em Environment Variables e faça um novo deploy.

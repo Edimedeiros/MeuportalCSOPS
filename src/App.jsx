@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Lock,
@@ -37,11 +37,34 @@ import {
 } from "./data/mockData.js";
 import { canSeeCard } from "./utils/permissions.js";
 import { nowFormatted } from "./utils/dates.js";
+import { supabase, isSupabaseConfigured } from "./lib/supabase.js";
 
 // ─── Login Screen ────────────────────────────────────────────────────────────
 
-function LoginScreen({ onLogin }) {
+function LoginScreen({
+  onLogin,
+  onSignUp,
+  onGoogleLogin,
+  authLoading,
+  authError,
+  authMessage,
+}) {
   const [showPassword, setShowPassword] = useState(false);
+  const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+
+  const isSignup = mode === "signup";
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    if (isSignup) {
+      onSignUp({ email, password, fullName });
+      return;
+    }
+    onLogin({ email, password });
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F1EA] p-4 text-stone-900">
@@ -91,26 +114,43 @@ function LoginScreen({ onLogin }) {
                   <LayoutDashboard className="h-5 w-5" />
                 </div>
                 <h2 className="text-2xl font-semibold tracking-tight text-stone-950">
-                  Entrar no portal
+                  {isSignup ? "Criar conta" : "Entrar no portal"}
                 </h2>
                 <p className="mt-2 text-sm text-stone-500">
-                  Acesse com e-mail e senha ou com sua conta Gmail.
+                  {isSignup
+                    ? "Crie seu acesso com e-mail e senha."
+                    : "Acesse com e-mail e senha ou com sua conta Gmail."}
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {isSignup && (
+                  <TextInput
+                    value={fullName}
+                    onChange={(event) => setFullName(event.target.value)}
+                    placeholder="Seu nome"
+                    required
+                  />
+                )}
+
                 <TextInput
                   icon={Mail}
                   type="email"
-                  defaultValue="edimarley.oliveira@acessorias.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   placeholder="Seu e-mail"
+                  required
                 />
+
                 <div className="relative">
                   <TextInput
                     icon={Lock}
                     type={showPassword ? "text" : "password"}
-                    defaultValue="123456"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
                     placeholder="Sua senha"
+                    required
+                    minLength={6}
                   />
                   <button
                     type="button"
@@ -125,35 +165,58 @@ function LoginScreen({ onLogin }) {
                   </button>
                 </div>
 
+                {authError && (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {authError}
+                  </div>
+                )}
+
+                {authMessage && (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+                    {authMessage}
+                  </div>
+                )}
+
                 <Button
-                  onClick={onLogin}
-                  className="h-12 w-full rounded-2xl bg-stone-950 text-white hover:bg-stone-800"
+                  type="submit"
+                  disabled={authLoading}
+                  className="h-12 w-full rounded-2xl bg-stone-950 text-white hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Acessar meu portal
+                  {authLoading
+                    ? "Aguarde..."
+                    : isSignup
+                    ? "Criar minha conta"
+                    : "Acessar meu portal"}
                 </Button>
 
                 <Button
-                  onClick={onLogin}
+                  type="button"
+                  onClick={onGoogleLogin}
+                  disabled={authLoading}
                   variant="outline"
-                  className="h-12 w-full rounded-2xl border-stone-200 bg-white text-stone-700 hover:bg-stone-50"
+                  className="h-12 w-full rounded-2xl border-stone-200 bg-white text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Mail className="mr-2 h-4 w-4" />
                   Entrar com Gmail
                 </Button>
 
                 <button
-                  onClick={onLogin}
+                  type="button"
+                  onClick={() => {
+                    setMode(isSignup ? "login" : "signup");
+                  }}
                   className="w-full rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 hover:bg-stone-50"
                 >
-                  Criar conta
+                  {isSignup ? "Já tenho conta" : "Criar conta"}
                 </button>
-              </div>
+              </form>
 
-              <div className="mt-6 rounded-2xl bg-stone-50 p-4 text-sm text-stone-500">
-                <strong className="text-stone-700">Protótipo:</strong> em
-                produção, login Gmail e criação de conta seriam conectados ao
-                provedor de autenticação.
-              </div>
+              {!isSupabaseConfigured && (
+                <div className="mt-6 rounded-2xl bg-amber-50 p-4 text-sm text-amber-700">
+                  Configure as variáveis VITE_SUPABASE_URL e
+                  VITE_SUPABASE_ANON_KEY para ativar o login real.
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -230,7 +293,11 @@ function ActionDialog({ dialog, onCancel, onSubmit }) {
 // ─── App Shell ───────────────────────────────────────────────────────────────
 
 function AppShell() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [authUser, setAuthUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authActionLoading, setAuthActionLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
   const [workspaces, setWorkspaces] = useState(startWorkspaces);
   const [users, setUsers] = useState(startUsers);
   const [tags, setTags] = useState(startTags);
@@ -247,6 +314,149 @@ function AppShell() {
   const [logs, setLogs] = useState(initialLogs);
   const [toasts, setToasts] = useState([]);
   const [dialog, setDialog] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadSession() {
+      if (!supabase) {
+        setAuthLoading(false);
+        return;
+      }
+
+      const { data } = await supabase.auth.getSession();
+      if (!active) return;
+
+      const user = data?.session?.user || null;
+      setAuthUser(user);
+
+      if (user) {
+        const name =
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email ||
+          "Usuário";
+        setProfileName(name);
+      }
+
+      setAuthLoading(false);
+    }
+
+    loadSession();
+
+    if (!supabase) {
+      return () => {
+        active = false;
+      };
+    }
+
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        const user = session?.user || null;
+        setAuthUser(user);
+
+        if (user) {
+          const name =
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.email ||
+            "Usuário";
+          setProfileName(name);
+        }
+      }
+    );
+
+    return () => {
+      active = false;
+      subscription?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  async function handleLogin({ email, password }) {
+    setAuthError("");
+    setAuthMessage("");
+
+    if (!supabase) {
+      setAuthError("Supabase ainda não está configurado neste ambiente.");
+      return;
+    }
+
+    setAuthActionLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setAuthActionLoading(false);
+
+    if (error) {
+      setAuthError(error.message);
+    }
+  }
+
+  async function handleSignUp({ email, password, fullName }) {
+    setAuthError("");
+    setAuthMessage("");
+
+    if (!supabase) {
+      setAuthError("Supabase ainda não está configurado neste ambiente.");
+      return;
+    }
+
+    setAuthActionLoading(true);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName || email,
+        },
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    setAuthActionLoading(false);
+
+    if (error) {
+      setAuthError(error.message);
+      return;
+    }
+
+    if (data?.session) {
+      setAuthMessage("Conta criada com sucesso.");
+    } else {
+      setAuthMessage(
+        "Conta criada. Verifique seu e-mail para confirmar o acesso, se a confirmação estiver ativada."
+      );
+    }
+  }
+
+  async function handleGoogleLogin() {
+    setAuthError("");
+    setAuthMessage("");
+
+    if (!supabase) {
+      setAuthError("Supabase ainda não está configurado neste ambiente.");
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      setAuthError(error.message);
+    }
+  }
+
+  async function handleLogout() {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    setAuthUser(null);
+  }
+
 
   // Determine current user based on active workspace
   const currentUser =
@@ -516,7 +726,26 @@ function AppShell() {
     });
   }
 
-  if (!loggedIn) return <LoginScreen onLogin={() => setLoggedIn(true)} />;
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F5F1EA] text-stone-700">
+        Carregando portal...
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return (
+      <LoginScreen
+        onLogin={handleLogin}
+        onSignUp={handleSignUp}
+        onGoogleLogin={handleGoogleLogin}
+        authLoading={authActionLoading}
+        authError={authError}
+        authMessage={authMessage}
+      />
+    );
+  }
 
   return (
     <div
@@ -536,7 +765,7 @@ function AppShell() {
         activeWorkspaceId={activeWorkspaceId}
         setActiveWorkspaceId={setActiveWorkspaceId}
         onAddWorkspace={addWorkspace}
-        onLogout={() => setLoggedIn(false)}
+        onLogout={handleLogout}
         profilePhoto={profilePhoto}
         profileName={profileName}
         canEdit={canEdit}
