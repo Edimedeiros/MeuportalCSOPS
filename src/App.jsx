@@ -27,17 +27,21 @@ import Button from "./components/ui/Button.jsx";
 import { Card, CardContent } from "./components/ui/Card.jsx";
 import TextInput from "./components/ui/TextInput.jsx";
 
-import {
-  startWorkspaces,
-  startUsers,
-  startTags,
-  startDepartments,
-  startServiceTypes,
-  initialLogs,
-} from "./data/mockData.js";
 import { canSeeCard } from "./utils/permissions.js";
 import { nowFormatted } from "./utils/dates.js";
 import { supabase, isSupabaseConfigured } from "./lib/supabase.js";
+
+import {
+  fetchPortalData,
+  createWorkspace as dbCreateWorkspace,
+  updateWorkspaceName,
+  deleteWorkspaceById,
+  createPhase as dbCreatePhase,
+  createCard as dbCreateCard,
+  updateCard as dbUpdateCard,
+  moveCardToPhase,
+  createRequestFromForm,
+} from "./services/portalData.js";
 
 // ─── Login Screen ────────────────────────────────────────────────────────────
 
@@ -59,10 +63,12 @@ function LoginScreen({
 
   function handleSubmit(event) {
     event.preventDefault();
+
     if (isSignup) {
       onSignUp({ email, password, fullName });
       return;
     }
+
     onLogin({ email, password });
   }
 
@@ -78,13 +84,16 @@ function LoginScreen({
             <ShieldCheck className="h-4 w-4" />
             Sistema privado para gestão de trabalhos
           </div>
+
           <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-stone-950 md:text-6xl">
             Organize seus trabalhos em uma área limpa, colaborativa e segura.
           </h1>
+
           <p className="mt-5 max-w-xl text-base leading-7 text-stone-600 md:text-lg">
             Controle pedidos, prioridades, prazos, indicadores, fluxogramas e
             entregas em um só lugar.
           </p>
+
           <div className="mt-8 grid max-w-xl gap-3 sm:grid-cols-3">
             {[
               [ClipboardList, "Quadros simples"],
@@ -113,9 +122,11 @@ function LoginScreen({
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-900 text-white shadow-lg shadow-stone-300">
                   <LayoutDashboard className="h-5 w-5" />
                 </div>
+
                 <h2 className="text-2xl font-semibold tracking-tight text-stone-950">
                   {isSignup ? "Criar conta" : "Entrar no portal"}
                 </h2>
+
                 <p className="mt-2 text-sm text-stone-500">
                   {isSignup
                     ? "Crie seu acesso com e-mail e senha."
@@ -152,6 +163,7 @@ function LoginScreen({
                     required
                     minLength={6}
                   />
+
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -202,9 +214,7 @@ function LoginScreen({
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setMode(isSignup ? "login" : "signup");
-                  }}
+                  onClick={() => setMode(isSignup ? "login" : "signup")}
                   className="w-full rounded-2xl px-4 py-3 text-sm font-medium text-stone-600 hover:bg-stone-50"
                 >
                   {isSignup ? "Já tenho conta" : "Criar conta"}
@@ -225,8 +235,7 @@ function LoginScreen({
   );
 }
 
-
-// ─── Feedback profissional: substitui alert/prompt/confirm nativos ─────────
+// ─── Feedback profissional ──────────────────────────────────────────────────
 
 function Toasts({ items = [], onClose }) {
   return (
@@ -235,12 +244,19 @@ function Toasts({ items = [], onClose }) {
         <div
           key={toast.id}
           className={`w-80 rounded-2xl border bg-white p-4 text-sm shadow-2xl transition ${
-            toast.type === "error" ? "border-red-200 text-red-700" : "border-stone-200 text-stone-700"
+            toast.type === "error"
+              ? "border-red-200 text-red-700"
+              : "border-stone-200 text-stone-700"
           }`}
         >
           <div className="flex items-start justify-between gap-3">
             <p>{toast.message}</p>
-            <button onClick={() => onClose(toast.id)} className="text-stone-400 hover:text-stone-700">×</button>
+            <button
+              onClick={() => onClose(toast.id)}
+              className="text-stone-400 hover:text-stone-700"
+            >
+              ×
+            </button>
           </div>
         </div>
       ))}
@@ -263,11 +279,21 @@ function ActionDialog({ dialog, onCancel, onSubmit }) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-stone-950/25 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-[1.75rem] border border-stone-200 bg-white p-6 shadow-2xl">
-        <h3 className="text-lg font-semibold text-stone-950">{dialog.title}</h3>
-        {dialog.message && <p className="mt-2 text-sm leading-6 text-stone-500">{dialog.message}</p>}
+        <h3 className="text-lg font-semibold text-stone-950">
+          {dialog.title}
+        </h3>
+
+        {dialog.message && (
+          <p className="mt-2 text-sm leading-6 text-stone-500">
+            {dialog.message}
+          </p>
+        )}
+
         {isInput && (
           <div className="mt-5">
-            <label className="mb-2 block text-sm font-medium text-stone-700">{dialog.label}</label>
+            <label className="mb-2 block text-sm font-medium text-stone-700">
+              {dialog.label}
+            </label>
             <input
               autoFocus
               value={value}
@@ -276,11 +302,22 @@ function ActionDialog({ dialog, onCancel, onSubmit }) {
             />
           </div>
         )}
+
         <div className="mt-6 flex justify-end gap-3">
-          <button onClick={onCancel} className="rounded-2xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">Cancelar</button>
+          <button
+            onClick={onCancel}
+            className="rounded-2xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
+          >
+            Cancelar
+          </button>
+
           <button
             onClick={() => onSubmit(isInput ? value : true)}
-            className={`rounded-2xl px-4 py-2 text-sm font-medium text-white ${danger ? "bg-red-600 hover:bg-red-700" : "bg-stone-950 hover:bg-stone-800"}`}
+            className={`rounded-2xl px-4 py-2 text-sm font-medium text-white ${
+              danger
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-stone-950 hover:bg-stone-800"
+            }`}
           >
             {dialog.confirmLabel || "Confirmar"}
           </button>
@@ -298,22 +335,88 @@ function AppShell() {
   const [authActionLoading, setAuthActionLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const [authMessage, setAuthMessage] = useState("");
-  const [workspaces, setWorkspaces] = useState(startWorkspaces);
-  const [users, setUsers] = useState(startUsers);
-  const [tags, setTags] = useState(startTags);
-  const [departments, setDepartments] = useState(startDepartments);
-  const [serviceTypes, setServiceTypes] = useState(startServiceTypes);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState(1);
+
+  const [dataLoading, setDataLoading] = useState(false);
+  const [dataError, setDataError] = useState("");
+
+  const [workspaces, setWorkspaces] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [tags, setTags] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [serviceTypes, setServiceTypes] = useState([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState(null);
+
   const [activeMenu, setActiveMenu] = useState("work");
   const [search, setSearch] = useState("");
   const [selectedCard, setSelectedCard] = useState(null);
   const [profilePhoto, setProfilePhoto] = useState("");
-  const [profileName, setProfileName] = useState("Edimarley Oliveira");
+  const [profileName, setProfileName] = useState("Usuário");
   const [theme, setTheme] = useState("light");
   const [newPhase, setNewPhase] = useState("");
-  const [logs, setLogs] = useState(initialLogs);
+  const [logs, setLogs] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [dialog, setDialog] = useState(null);
+
+  const allMenuAccess = {
+    work: true,
+    dash: true,
+    form: true,
+    flow: true,
+    people: true,
+    logs: true,
+    settings: true,
+  };
+
+  async function loadPortalData({ silent = false } = {}) {
+    if (!supabase) return;
+
+    try {
+      setDataError("");
+      if (!silent) setDataLoading(true);
+
+      const data = await fetchPortalData();
+
+      setWorkspaces(data.workspaces || []);
+      setUsers(data.users || []);
+      setDepartments(data.departments || []);
+      setServiceTypes(data.serviceTypes || []);
+      setTags(data.tags || []);
+      setLogs(data.logs || []);
+
+      const nextName =
+        data.profile?.full_name ||
+        data.user?.user_metadata?.full_name ||
+        data.user?.user_metadata?.name ||
+        data.user?.email ||
+        "Usuário";
+
+      setProfileName(nextName);
+      setProfilePhoto(data.profile?.avatar_url || "");
+
+      setActiveWorkspaceId((current) => {
+        const exists = (data.workspaces || []).some(
+          (workspace) => workspace.id === current
+        );
+
+        if (exists) return current;
+
+        return data.workspaces?.[0]?.id || null;
+      });
+    } catch (error) {
+      console.error(error);
+      setDataError(
+        error?.message ||
+          "Não foi possível carregar os dados do portal no Supabase."
+      );
+    } finally {
+      if (!silent) setDataLoading(false);
+    }
+  }
+
+  function handleAsyncError(error, fallback = "Não foi possível concluir a ação.") {
+    console.error(error);
+    notify(error?.message || fallback, "error");
+  }
 
   useEffect(() => {
     let active = true;
@@ -325,6 +428,7 @@ function AppShell() {
       }
 
       const { data } = await supabase.auth.getSession();
+
       if (!active) return;
 
       const user = data?.session?.user || null;
@@ -336,6 +440,7 @@ function AppShell() {
           user.user_metadata?.name ||
           user.email ||
           "Usuário";
+
         setProfileName(name);
       }
 
@@ -353,6 +458,7 @@ function AppShell() {
     const { data: subscription } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         const user = session?.user || null;
+
         setAuthUser(user);
 
         if (user) {
@@ -361,7 +467,16 @@ function AppShell() {
             user.user_metadata?.name ||
             user.email ||
             "Usuário";
+
           setProfileName(name);
+        } else {
+          setWorkspaces([]);
+          setUsers([]);
+          setTags([]);
+          setDepartments([]);
+          setServiceTypes([]);
+          setLogs([]);
+          setActiveWorkspaceId(null);
         }
       }
     );
@@ -371,6 +486,12 @@ function AppShell() {
       subscription?.subscription?.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (authUser) {
+      loadPortalData();
+    }
+  }, [authUser?.id]);
 
   async function handleLogin({ email, password }) {
     setAuthError("");
@@ -382,10 +503,12 @@ function AppShell() {
     }
 
     setAuthActionLoading(true);
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
     setAuthActionLoading(false);
 
     if (error) {
@@ -403,6 +526,7 @@ function AppShell() {
     }
 
     setAuthActionLoading(true);
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -413,6 +537,7 @@ function AppShell() {
         emailRedirectTo: window.location.origin,
       },
     });
+
     setAuthActionLoading(false);
 
     if (error) {
@@ -422,6 +547,7 @@ function AppShell() {
 
     if (data?.session) {
       setAuthMessage("Conta criada com sucesso.");
+      setAuthUser(data.session.user);
     } else {
       setAuthMessage(
         "Conta criada. Verifique seu e-mail para confirmar o acesso, se a confirmação estiver ativada."
@@ -454,34 +580,60 @@ function AppShell() {
     if (supabase) {
       await supabase.auth.signOut();
     }
+
     setAuthUser(null);
   }
 
+  const workspace =
+    workspaces.find((item) => item.id === activeWorkspaceId) || workspaces[0];
 
-  // Determine current user based on active workspace
-  const currentUser =
-    activeWorkspaceId === 2 ? users[1] : users[0];
+  const board = workspace?.board || {
+    title: "Meus Trabalhos",
+    description: "Todas as tarefas em um só lugar",
+    phases: [],
+    phaseRecords: [],
+    cards: [],
+  };
+
+  const cards = board?.cards || [];
+
+  const currentUser = useMemo(() => {
+    const byEmail = users.find((user) => user.email === authUser?.email);
+    const owner = users.find((user) => user.role === "owner");
+
+    return (
+      byEmail ||
+      owner ||
+      users[0] || {
+        id: authUser?.id || "current-user",
+        name: profileName || authUser?.email || "Usuário",
+        email: authUser?.email || "",
+        role: "owner",
+        permission: "edit",
+        avatar: "US",
+        cardScope: "all",
+        menuAccess: allMenuAccess,
+      }
+    );
+  }, [users, authUser?.email, authUser?.id, profileName]);
 
   const canEdit =
-    currentUser?.role === "owner" || currentUser?.permission === "edit";
+    currentUser?.role === "owner" ||
+    currentUser?.role === "editor" ||
+    currentUser?.permission === "edit";
 
-  // Guard menu access for non-owners
   const visibleMenu =
-    canEdit || currentUser?.menuAccess?.[activeMenu]
-      ? activeMenu
-      : "work";
-
-  const workspace =
-    workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
-  const board = workspace?.board || { title: "", description: "", phases: [], cards: [] };
-  const cards = board?.cards || [];
+    canEdit || currentUser?.menuAccess?.[activeMenu] ? activeMenu : "work";
 
   const visibleCards = useMemo(() => {
     const scoped = cards.filter((card) =>
       card ? canSeeCard(card, currentUser, canEdit) : false
     );
+
     if (!search.trim()) return scoped;
+
     const term = search.toLowerCase();
+
     return scoped.filter((card) =>
       [
         card.title,
@@ -513,7 +665,9 @@ function AppShell() {
 
   function notify(message, type = "success") {
     const id = Date.now() + Math.random();
+
     setToasts((prev) => [...prev, { id, message, type }]);
+
     window.setTimeout(() => {
       setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, 3800);
@@ -534,194 +688,238 @@ function AppShell() {
   function submitDialog(value) {
     const current = dialog;
     setDialog(null);
-    current?.onConfirm?.(value);
-  }
 
-  function updateBoard(nextBoard) {
-    setWorkspaces((prev) =>
-      prev.map((w) =>
-        w.id === activeWorkspaceId ? { ...w, board: nextBoard } : w
-      )
+    Promise.resolve(current?.onConfirm?.(value)).catch((error) =>
+      handleAsyncError(error)
     );
   }
 
-  function addCard(phase) {
-    if (!canEdit) return;
-    addLog("Card criado", "Meus trabalhos", "Novo card criado na fase " + phase);
-    const card = {
-      id: Date.now(),
-      title: "Novo trabalho",
-      phase,
-      tag: serviceTypes[0] || "Processos",
-      owner: "EO",
-      requester: "Interno",
-      requesterEmail: "",
-      department: "CS OPS",
-      dueDate: "",
-      startedAt: new Date().toISOString().slice(0, 10),
-      finishedAt: "",
-      priority: "Normal",
-      description: "Descreva o trabalho, objetivo e próximos passos.",
-      comments: 0,
-      originalForm: null,
-    };
-    updateBoard({ ...board, cards: [card, ...cards] });
+  function getPhaseRecordByName(phaseName) {
+    return (board.phaseRecords || []).find((phase) => phase.name === phaseName);
+  }
+
+  async function addCard(phase) {
+    if (!canEdit || !workspace) return;
+
+    try {
+      const phaseRecord = getPhaseRecordByName(phase);
+
+      await dbCreateCard({
+        workspaceId: workspace.id,
+        phaseId: phaseRecord?.id || null,
+        userName: currentUser?.name || profileName,
+        card: {
+          title: "Novo trabalho",
+          phase,
+          tag: serviceTypes[0] || "Processos",
+          owner: "EO",
+          requester: "Interno",
+          requesterEmail: "",
+          department: departments[0] || "CS OPS",
+          dueDate: "",
+          priority: "Normal",
+          description: "Descreva o trabalho, objetivo e próximos passos.",
+          comments: 0,
+          originalForm: null,
+        },
+      });
+
+      notify("Card criado.");
+      await loadPortalData({ silent: true });
+    } catch (error) {
+      handleAsyncError(error, "Não foi possível criar o card.");
+    }
   }
 
   function sendAutoReply(card) {
     if (!card?.requesterEmail) return;
-    notify("Resposta automática simulada para " + card.requesterEmail + ": solicitação finalizada.", "success");
+
+    notify(
+      "Resposta automática simulada para " +
+        card.requesterEmail +
+        ": solicitação finalizada.",
+      "success"
+    );
   }
 
-  function saveCard(updatedCard) {
-    if (!updatedCard) return;
-    addLog("Card editado", "Meus trabalhos", "Card atualizado: " + updatedCard.title);
-    const previous = cards.find((c) => c.id === updatedCard.id);
-    const finishedAt =
-      updatedCard.phase === "Concluído" && !updatedCard.finishedAt
-        ? new Date().toISOString().slice(0, 10)
-        : updatedCard.finishedAt;
-    const finalCard = { ...updatedCard, finishedAt };
-    updateBoard({
-      ...board,
-      cards: cards.map((c) => (c.id === updatedCard.id ? finalCard : c)),
-    });
-    if (
-      previous?.phase !== "Concluído" &&
-      finalCard.phase === "Concluído" &&
-      finalCard.requesterEmail
-    ) {
-      sendAutoReply(finalCard);
-    }
-    setSelectedCard(null);
-  }
+  async function saveCard(updatedCard) {
+    if (!updatedCard || !workspace) return;
 
-  function moveCard(cardId, nextPhase) {
-    if (!canEdit) return;
-    const previous = cards.find((c) => c.id === cardId);
-    addLog(
-      "Card movido",
-      "Meus trabalhos",
-      (previous?.title || "Card") + " movido para " + nextPhase
-    );
-    const nextCards = cards.map((c) =>
-      c.id === cardId
-        ? {
-            ...c,
-            phase: nextPhase,
-            finishedAt:
-              nextPhase === "Concluído"
-                ? new Date().toISOString().slice(0, 10)
-                : c.finishedAt,
-          }
-        : c
-    );
-    const finalCard = nextCards.find((c) => c.id === cardId);
-    updateBoard({ ...board, cards: nextCards });
-    if (
-      previous?.phase !== "Concluído" &&
-      nextPhase === "Concluído" &&
-      finalCard?.requesterEmail
-    ) {
-      sendAutoReply(finalCard);
+    try {
+      const previous = cards.find((card) => card.id === updatedCard.id);
+
+      await dbUpdateCard({
+        workspaceId: workspace.id,
+        cardId: updatedCard.id,
+        card: updatedCard,
+        oldCard: previous || null,
+        phases: board.phaseRecords || [],
+        userName: currentUser?.name || profileName,
+      });
+
+      if (
+        previous?.phase !== "Concluído" &&
+        updatedCard.phase === "Concluído" &&
+        updatedCard.requesterEmail
+      ) {
+        sendAutoReply(updatedCard);
+      }
+
+      setSelectedCard(null);
+      notify("Card atualizado.");
+      await loadPortalData({ silent: true });
+    } catch (error) {
+      handleAsyncError(error, "Não foi possível salvar o card.");
     }
   }
 
-  function addPhase() {
-    if (!newPhase.trim() || board.phases.includes(newPhase.trim())) return;
-    addLog("Fase criada", "Meus trabalhos", "Nova fase: " + newPhase.trim());
-    updateBoard({ ...board, phases: [...board.phases, newPhase.trim()] });
-    setNewPhase("");
+  async function moveCard(cardId, nextPhase) {
+    if (!canEdit || !workspace) return;
+
+    try {
+      const previous = cards.find((card) => card.id === cardId);
+      const phaseRecord = getPhaseRecordByName(nextPhase);
+
+      if (!phaseRecord) {
+        notify("Fase não encontrada.", "error");
+        return;
+      }
+
+      await moveCardToPhase({
+        workspaceId: workspace.id,
+        cardId,
+        phaseId: phaseRecord.id,
+        phaseName: nextPhase,
+        oldCard: previous || null,
+        userName: currentUser?.name || profileName,
+      });
+
+      if (
+        previous?.phase !== "Concluído" &&
+        nextPhase === "Concluído" &&
+        previous?.requesterEmail
+      ) {
+        sendAutoReply(previous);
+      }
+
+      notify("Card movido.");
+      await loadPortalData({ silent: true });
+    } catch (error) {
+      handleAsyncError(error, "Não foi possível mover o card.");
+    }
   }
 
-  function submitRequest(form) {
-    addLog(
-      "Pedido criado",
-      "Formulário",
-      "Solicitação aberta por " + (form.requester || "?") + ": " + form.title
-    );
-    const card = {
-      id: Date.now(),
-      title: form.title,
-      phase: form.phase || board.phases[0] || "A fazer",
-      tag: form.tag || serviceTypes[0] || "Processos",
-      owner: "EO",
-      requester: form.requester || "Não informado",
-      requesterEmail: form.requesterEmail || "",
-      department: form.department || "Não informado",
-      dueDate: form.dueDate,
-      startedAt: new Date().toISOString().slice(0, 10),
-      finishedAt: "",
-      priority: form.priority || "Normal",
-      description: form.description,
-      comments: 0,
-      originalForm: { ...form },
-    };
-    updateBoard({ ...board, cards: [card, ...cards] });
+  async function addPhase() {
+    if (!workspace) return;
+
+    const name = newPhase.trim();
+
+    if (!name || board.phases.includes(name)) return;
+
+    try {
+      await dbCreatePhase({
+        workspaceId: workspace.id,
+        name,
+        position: board.phases.length,
+        userName: currentUser?.name || profileName,
+      });
+
+      setNewPhase("");
+      notify("Fase criada.");
+      await loadPortalData({ silent: true });
+    } catch (error) {
+      handleAsyncError(error, "Não foi possível criar a fase.");
+    }
   }
 
-  function addWorkspace() {
-    const id = Date.now();
-    addLog("Espaço criado", "Espaços", "Novo espaço de trabalho criado");
-    setWorkspaces([
-      ...workspaces,
-      {
-        id,
-        title: "Novo espaço de trabalho",
-        owner: profileName || "Novo usuário",
+  async function submitRequest(form) {
+    if (!workspace) return;
+
+    try {
+      const phaseRecord =
+        getPhaseRecordByName(form.phase) || (board.phaseRecords || [])[0];
+
+      await createRequestFromForm({
+        workspaceId: workspace.id,
+        phaseId: phaseRecord?.id || null,
+        form,
+        userName: form.requester || currentUser?.name || profileName,
+      });
+
+      notify("Pedido enviado e criado no Kanban.");
+      await loadPortalData({ silent: true });
+    } catch (error) {
+      handleAsyncError(error, "Não foi possível enviar o pedido.");
+    }
+  }
+
+  async function addWorkspace() {
+    try {
+      const created = await dbCreateWorkspace({
+        name: "Novo espaço de trabalho",
         description: "Espaço separado para administrar trabalhos próprios.",
-        board: {
-          title: "Meus Trabalhos",
-          description: "Todas as tarefas em um só lugar",
-          phases: ["A fazer", "Em andamento", "Em validação", "Concluído"],
-          cards: [],
-        },
-      },
-    ]);
-    setActiveWorkspaceId(id);
+        userName: currentUser?.name || profileName,
+      });
+
+      notify("Espaço criado.");
+      await loadPortalData({ silent: true });
+      setActiveWorkspaceId(created.id);
+    } catch (error) {
+      handleAsyncError(error, "Não foi possível criar o espaço.");
+    }
   }
 
   function editWorkspace(workspaceId) {
-    const target = workspaces.find((w) => w.id === workspaceId);
+    const target = workspaces.find((item) => item.id === workspaceId);
+
     if (!target) return;
+
     requestText({
       title: "Editar espaço de trabalho",
       label: "Nome do espaço",
       initialValue: target.title,
       confirmLabel: "Salvar espaço",
-      onConfirm: (nextTitle) => {
+      onConfirm: async (nextTitle) => {
         if (!nextTitle || !nextTitle.trim()) return;
-        setWorkspaces((prev) =>
-          prev.map((w) =>
-            w.id === workspaceId ? { ...w, title: nextTitle.trim() } : w
-          )
-        );
-        addLog("Espaço editado", "Espaços", target.title + " -> " + nextTitle.trim());
-        notify("Espaço atualizado.", "success");
+
+        await updateWorkspaceName({
+          workspaceId,
+          name: nextTitle.trim(),
+          oldWorkspace: target,
+          userName: currentUser?.name || profileName,
+        });
+
+        notify("Espaço atualizado.");
+        await loadPortalData({ silent: true });
       },
     });
   }
 
   function deleteWorkspace(workspaceId) {
-    const target = workspaces.find((w) => w.id === workspaceId);
+    const target = workspaces.find((item) => item.id === workspaceId);
+
     if (!target) return;
+
     if (workspaces.length <= 1) {
       notify("Você precisa manter pelo menos um espaço de trabalho.", "error");
       return;
     }
+
     requestConfirm({
       title: "Excluir espaço de trabalho?",
-      message: "Essa exclusão é irreversível. Todos os dados visuais deste espaço serão removidos do protótipo.",
+      message:
+        "Essa exclusão é irreversível. Todos os dados deste espaço serão removidos.",
       confirmLabel: "Excluir espaço",
       tone: "danger",
-      onConfirm: () => {
-        setWorkspaces((prev) => prev.filter((w) => w.id !== workspaceId));
-        if (activeWorkspaceId === workspaceId) {
-          const fallback = workspaces.find((w) => w.id !== workspaceId);
-          setActiveWorkspaceId(fallback?.id || 1);
-        }
-        addLog("Espaço excluído", "Espaços", target.title);
-        notify("Espaço excluído.", "success");
+      onConfirm: async () => {
+        await deleteWorkspaceById({
+          workspaceId,
+          oldWorkspace: target,
+          userName: currentUser?.name || profileName,
+        });
+
+        notify("Espaço excluído.");
+        await loadPortalData({ silent: true });
       },
     });
   }
@@ -744,6 +942,45 @@ function AppShell() {
         authError={authError}
         authMessage={authMessage}
       />
+    );
+  }
+
+  if (dataLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F5F1EA] text-stone-700">
+        Preparando seu espaço de trabalho...
+      </div>
+    );
+  }
+
+  if (dataError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F5F1EA] p-6 text-stone-900">
+        <div className="w-full max-w-lg rounded-[2rem] border border-red-100 bg-white p-8 shadow-xl">
+          <h1 className="text-2xl font-semibold">
+            Não foi possível carregar o portal
+          </h1>
+
+          <p className="mt-3 text-sm leading-6 text-stone-600">{dataError}</p>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button
+              onClick={() => loadPortalData()}
+              className="rounded-2xl bg-stone-950 text-white hover:bg-stone-800"
+            >
+              Tentar novamente
+            </Button>
+
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="rounded-2xl border-stone-200"
+            >
+              Sair
+            </Button>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -774,12 +1011,8 @@ function AppShell() {
         onDeleteWorkspace={deleteWorkspace}
       />
 
-      <main className="flex min-w-0 flex-1 flex-col bg-[#FAF8F5] overflow-hidden app-main">
-        <TopBar
-          activeMenu={visibleMenu}
-          search={search}
-          setSearch={setSearch}
-        />
+      <main className="app-main flex min-w-0 flex-1 flex-col overflow-hidden bg-[#FAF8F5]">
+        <TopBar activeMenu={visibleMenu} search={search} setSearch={setSearch} />
 
         {visibleMenu === "work" && (
           <WorkView
@@ -795,9 +1028,11 @@ function AppShell() {
             setNewPhase={setNewPhase}
           />
         )}
+
         {visibleMenu === "dash" && (
           <DashboardView board={board} cards={visibleCards} />
         )}
+
         {visibleMenu === "form" && (
           <RequestFormView
             board={board}
@@ -813,7 +1048,17 @@ function AppShell() {
             requestConfirm={requestConfirm}
           />
         )}
-        {visibleMenu === "flow" && <FlowView onLog={addLog} canEdit={canEdit} notify={notify} requestText={requestText} requestConfirm={requestConfirm} />}
+
+        {visibleMenu === "flow" && (
+          <FlowView
+            onLog={addLog}
+            canEdit={canEdit}
+            notify={notify}
+            requestText={requestText}
+            requestConfirm={requestConfirm}
+          />
+        )}
+
         {visibleMenu === "people" && (
           <PeopleView
             users={users}
@@ -824,7 +1069,9 @@ function AppShell() {
             requestText={requestText}
           />
         )}
+
         {visibleMenu === "logs" && <LogsView logs={logs} />}
+
         {visibleMenu === "settings" && (
           <SettingsView
             profilePhoto={profilePhoto}
@@ -841,7 +1088,12 @@ function AppShell() {
       </main>
 
       <Toasts items={toasts} onClose={closeToast} />
-      <ActionDialog dialog={dialog} onCancel={() => setDialog(null)} onSubmit={submitDialog} />
+
+      <ActionDialog
+        dialog={dialog}
+        onCancel={() => setDialog(null)}
+        onSubmit={submitDialog}
+      />
 
       <CardModal
         card={selectedCard}
