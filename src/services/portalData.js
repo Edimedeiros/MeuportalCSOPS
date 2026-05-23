@@ -1,0 +1,880 @@
+import { supabase } from "../lib/supabase.js";
+
+const DEFAULT_PHASES = ["A fazer", "Em andamento", "Em validação", "Concluído"];
+
+const DEFAULT_DEPARTMENTS = [
+  "Customer Success",
+  "Operações",
+  "Grandes Contas",
+  "Adoção",
+  "CS OPS",
+];
+
+const DEFAULT_REQUEST_TYPES = [
+  { name: "Processos", color: "border-sky-200 bg-sky-50 text-sky-700" },
+  { name: "Dados", color: "border-blue-200 bg-blue-50 text-blue-700" },
+  { name: "Playbook", color: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+  { name: "Churn", color: "border-amber-200 bg-amber-50 text-amber-700" },
+  { name: "Melhoria", color: "border-red-200 bg-red-50 text-red-700" },
+];
+
+const DEFAULT_MENU_ACCESS = {
+  work: true,
+  dash: true,
+  form: false,
+  flow: false,
+  people: false,
+  logs: false,
+  settings: false,
+};
+
+const DEFAULT_EDIT_PERMISSIONS = {
+  createCard: false,
+  moveCard: false,
+  editCard: false,
+  deleteCard: false,
+  createPhase: false,
+  editPhase: false,
+  deletePhase: false,
+  formSettings: false,
+  flowEdit: false,
+  peopleEdit: false,
+};
+
+const OWNER_MENU_ACCESS = {
+  work: true,
+  dash: true,
+  form: true,
+  flow: true,
+  people: true,
+  logs: true,
+  settings: true,
+};
+
+const OWNER_EDIT_PERMISSIONS = {
+  createCard: true,
+  moveCard: true,
+  editCard: true,
+  deleteCard: true,
+  createPhase: true,
+  editPhase: true,
+  deletePhase: true,
+  formSettings: true,
+  flowEdit: true,
+  peopleEdit: true,
+};
+
+function getInitials(nameOrEmail = "") {
+  const clean = String(nameOrEmail || "").trim();
+
+  if (!clean) return "US";
+
+  const name = clean.includes("@") ? clean.split("@")[0] : clean;
+  const parts = name
+    .replace(/[._-]+/g, " ")
+    .split(" ")
+    .filter(Boolean);
+
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+
+  return name.slice(0, 2).toUpperCase();
+}
+
+function toDateOnly(value) {
+  if (!value) return "";
+
+  try {
+    return new Date(value).toISOString().slice(0, 10);
+  } catch {
+    return "";
+  }
+}
+
+function safeJson(value, fallback) {
+  if (!value) return fallback;
+
+  if (typeof value === "object") return value;
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeRole(role) {
+  if (role === "owner") return "owner";
+  if (role === "editor") return "editor";
+  return "viewer";
+}
+
+function normalizePermission(role) {
+  return role === "editor" || role === "owner" ? "edit" : "view";
+}
+
+function buildMemberUser(member, profile) {
+  const role = normalizeRole(member.role);
+  const email = profile?.email || member.invited_email || "";
+  const name =
+    profile?.full_name ||
+    member.invited_email ||
+    email ||
+    "Usuário convidado";
+
+  return {
+    id: member.user_id || member.id,
+    memberId: member.id,
+    name,
+    email,
+    role,
+    permission: normalizePermission(role),
+    avatar: getInitials(name || email),
+    photo: profile?.avatar_url || "",
+    cardScope: member.card_scope || "all",
+    menuAccess:
+      role === "owner"
+        ? OWNER_MENU_ACCESS
+        : safeJson(member.menu_access, DEFAULT_MENU_ACCESS),
+    editDetails:
+      role === "owner"
+        ? OWNER_EDIT_PERMISSIONS
+        : safeJson(member.edit_permissions, DEFAULT_EDIT_PERMISSIONS),
+  };
+}
+
+function mapCardFromDatabase(card, phasesById, departmentsById, requestTypesById) {
+  const requestType = requestTypesById.get(card.request_type_id);
+  const department = departmentsById.get(card.department_id);
+  const phase = phasesById.get(card.phase_id);
+
+  return {
+    id: card.id,
+    title: card.title,
+    phase: phase?.name || "A fazer",
+    phaseId: card.phase_id,
+    tag: requestType?.name || "Processos",
+    requestTypeId: card.request_type_id,
+    owner: "EO",
+    requester: card.requester_name || "Não informado",
+    requesterEmail: card.requester_email || "",
+    department: department?.name || "Não informado",
+    departmentId: card.department_id,
+    dueDate: card.due_date || "",
+    startedAt: toDateOnly(card.created_at),
+    finishedAt: toDateOnly(card.completed_at),
+    priority: card.priority || "Normal",
+    description: card.description || "",
+    comments: 0,
+    originalForm: card.original_form || null,
+    status: card.status || "open",
+    position: card.position || 0,
+    createdAt: card.created_at,
+    updatedAt: card.updated_at,
+  };
+}
+
+function buildWorkspaceFromDatabase({
+  workspace,
+  phases,
+  cards,
+  departments,
+  requestTypes,
+  ownerName,
+}) {
+  const phasesById = new Map(phases.map((phase) => [phase.id, phase]));
+  const departmentsById = new Map(departments.map((department) => [department.id, department]));
+  const requestTypesById = new Map(requestTypes.map((type) => [type.id, type]));
+
+  return {
+    id: workspace.id,
+    title: workspace.name,
+    owner: ownerName || "Usuário",
+    description: workspace.description || "Espaço de trabalho",
+    board: {
+      title: "Meus Trabalhos",
+      description: "Todas as tarefas em um só lugar",
+      phases: phases
+        .slice()
+        .sort((a, b) => (a.position || 0) - (b.position || 0))
+        .map((phase) => phase.name),
+      phaseRecords: phases,
+      cards: cards
+        .slice()
+        .sort((a, b) => (a.position || 0) - (b.position || 0))
+        .map((card) =>
+          mapCardFromDatabase(card, phasesById, departmentsById, requestTypesById)
+        ),
+    },
+  };
+}
+
+async function getCurrentSessionUser() {
+  if (!supabase) {
+    throw new Error("Supabase não está configurado.");
+  }
+
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error) throw error;
+
+  const user = data?.user;
+
+  if (!user) {
+    throw new Error("Usuário não autenticado.");
+  }
+
+  return user;
+}
+
+export async function ensureUserProfile(user) {
+  const fullName =
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    user.email ||
+    "Usuário";
+
+  const { data: existingProfile, error: selectError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (selectError) throw selectError;
+
+  if (existingProfile) {
+    return existingProfile;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .insert({
+      id: user.id,
+      full_name: fullName,
+      email: user.email,
+      avatar_url: user.user_metadata?.avatar_url || null,
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  return data;
+}
+
+async function createDefaultPhases(workspaceId, userId) {
+  const payload = DEFAULT_PHASES.map((name, index) => ({
+    workspace_id: workspaceId,
+    name,
+    position: index,
+    created_by: userId,
+  }));
+
+  const { data, error } = await supabase
+    .from("kanban_phases")
+    .insert(payload)
+    .select("*");
+
+  if (error) throw error;
+
+  return data || [];
+}
+
+async function createDefaultDepartments(workspaceId) {
+  const payload = DEFAULT_DEPARTMENTS.map((name) => ({
+    workspace_id: workspaceId,
+    name,
+  }));
+
+  const { data, error } = await supabase
+    .from("form_departments")
+    .insert(payload)
+    .select("*");
+
+  if (error) throw error;
+
+  return data || [];
+}
+
+async function createDefaultRequestTypes(workspaceId) {
+  const payload = DEFAULT_REQUEST_TYPES.map((item) => ({
+    workspace_id: workspaceId,
+    name: item.name,
+    color: item.color,
+  }));
+
+  const { data, error } = await supabase
+    .from("request_types")
+    .insert(payload)
+    .select("*");
+
+  if (error) throw error;
+
+  return data || [];
+}
+
+async function createOwnerMember(workspaceId, userId) {
+  const { data, error } = await supabase
+    .from("workspace_members")
+    .insert({
+      workspace_id: workspaceId,
+      user_id: userId,
+      role: "owner",
+      card_scope: "all",
+      menu_access: OWNER_MENU_ACCESS,
+      edit_permissions: OWNER_EDIT_PERMISSIONS,
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  return data;
+}
+
+export async function createAuditLog({
+  workspaceId,
+  action,
+  menu,
+  entityType,
+  entityId,
+  oldValue = null,
+  newValue = null,
+  detail = "",
+  userName = "",
+}) {
+  const user = await getCurrentSessionUser();
+
+  const { data, error } = await supabase
+    .from("audit_logs")
+    .insert({
+      workspace_id: workspaceId,
+      user_id: user.id,
+      user_name: userName || user.email,
+      action,
+      menu,
+      entity_type: entityType,
+      entity_id: entityId || null,
+      old_value: oldValue,
+      new_value: newValue,
+      detail,
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  return data;
+}
+
+export async function ensureInitialWorkspace() {
+  const user = await getCurrentSessionUser();
+  const profile = await ensureUserProfile(user);
+
+  const { data: existingWorkspaces, error: workspacesError } = await supabase
+    .from("workspaces")
+    .select("*")
+    .order("created_at", { ascending: true });
+
+  if (workspacesError) throw workspacesError;
+
+  if (existingWorkspaces?.length) {
+    return {
+      user,
+      profile,
+      workspace: existingWorkspaces[0],
+      created: false,
+    };
+  }
+
+  const { data: workspace, error: workspaceError } = await supabase
+    .from("workspaces")
+    .insert({
+      owner_id: user.id,
+      name: "Meu espaço de trabalho",
+      description: "Espaço de trabalho",
+    })
+    .select("*")
+    .single();
+
+  if (workspaceError) throw workspaceError;
+
+  await createOwnerMember(workspace.id, user.id);
+  await createDefaultPhases(workspace.id, user.id);
+  await createDefaultDepartments(workspace.id);
+  await createDefaultRequestTypes(workspace.id);
+
+  await createAuditLog({
+    workspaceId: workspace.id,
+    action: "Workspace criado",
+    menu: "Sistema",
+    entityType: "workspace",
+    entityId: workspace.id,
+    newValue: workspace,
+    detail: "Workspace inicial criado automaticamente.",
+    userName: profile.full_name || user.email,
+  });
+
+  return {
+    user,
+    profile,
+    workspace,
+    created: true,
+  };
+}
+
+export async function fetchPortalData() {
+  const user = await getCurrentSessionUser();
+  const profile = await ensureUserProfile(user);
+
+  await ensureInitialWorkspace();
+
+  const { data: workspaces, error: workspacesError } = await supabase
+    .from("workspaces")
+    .select("*")
+    .order("created_at", { ascending: true });
+
+  if (workspacesError) throw workspacesError;
+
+  const workspaceIds = (workspaces || []).map((workspace) => workspace.id);
+
+  if (!workspaceIds.length) {
+    return {
+      user,
+      profile,
+      workspaces: [],
+      users: [],
+      departments: [],
+      serviceTypes: [],
+      tags: [],
+      logs: [],
+    };
+  }
+
+  const [
+    membersResult,
+    phasesResult,
+    departmentsResult,
+    requestTypesResult,
+    cardsResult,
+    logsResult,
+  ] = await Promise.all([
+    supabase.from("workspace_members").select("*").in("workspace_id", workspaceIds),
+    supabase
+      .from("kanban_phases")
+      .select("*")
+      .in("workspace_id", workspaceIds)
+      .order("position", { ascending: true }),
+    supabase
+      .from("form_departments")
+      .select("*")
+      .in("workspace_id", workspaceIds)
+      .order("name", { ascending: true }),
+    supabase
+      .from("request_types")
+      .select("*")
+      .in("workspace_id", workspaceIds)
+      .order("name", { ascending: true }),
+    supabase
+      .from("cards")
+      .select("*")
+      .in("workspace_id", workspaceIds)
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("audit_logs")
+      .select("*")
+      .in("workspace_id", workspaceIds)
+      .order("created_at", { ascending: false })
+      .limit(300),
+  ]);
+
+  if (membersResult.error) throw membersResult.error;
+  if (phasesResult.error) throw phasesResult.error;
+  if (departmentsResult.error) throw departmentsResult.error;
+  if (requestTypesResult.error) throw requestTypesResult.error;
+  if (cardsResult.error) throw cardsResult.error;
+  if (logsResult.error) throw logsResult.error;
+
+  const profileIds = [
+    ...new Set(
+      (membersResult.data || [])
+        .map((member) => member.user_id)
+        .filter(Boolean)
+    ),
+  ];
+
+  let profiles = [];
+
+  if (profileIds.length) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .in("id", profileIds);
+
+    if (error) throw error;
+
+    profiles = data || [];
+  }
+
+  const profilesById = new Map(profiles.map((item) => [item.id, item]));
+
+  const allDepartments = departmentsResult.data || [];
+  const allRequestTypes = requestTypesResult.data || [];
+  const allPhases = phasesResult.data || [];
+  const allCards = cardsResult.data || [];
+
+  const mappedWorkspaces = (workspaces || []).map((workspace) =>
+    buildWorkspaceFromDatabase({
+      workspace,
+      ownerName: profile.full_name || user.email,
+      phases: allPhases.filter((phase) => phase.workspace_id === workspace.id),
+      departments: allDepartments.filter(
+        (department) => department.workspace_id === workspace.id
+      ),
+      requestTypes: allRequestTypes.filter(
+        (type) => type.workspace_id === workspace.id
+      ),
+      cards: allCards.filter((card) => card.workspace_id === workspace.id),
+    })
+  );
+
+  const mappedUsers = (membersResult.data || []).map((member) =>
+    buildMemberUser(member, profilesById.get(member.user_id))
+  );
+
+  const mappedLogs = (logsResult.data || []).map((log) => ({
+    id: log.id,
+    date: new Date(log.created_at).toLocaleString("pt-BR"),
+    action: log.action,
+    menu: log.menu || "",
+    user: log.user_name || "",
+    detail: log.detail || "",
+    entityType: log.entity_type || "",
+    entityId: log.entity_id || "",
+  }));
+
+  return {
+    user,
+    profile,
+    workspaces: mappedWorkspaces,
+    users: mappedUsers,
+    departments: allDepartments.map((department) => department.name),
+    serviceTypes: allRequestTypes.map((type) => type.name),
+    tags: allRequestTypes.map((type) => ({
+      id: type.id,
+      name: type.name,
+      color: type.color || "border-stone-200 bg-stone-50 text-stone-700",
+    })),
+    logs: mappedLogs,
+  };
+}
+
+export async function createWorkspace({ name, description, userName }) {
+  const user = await getCurrentSessionUser();
+
+  const { data: workspace, error } = await supabase
+    .from("workspaces")
+    .insert({
+      owner_id: user.id,
+      name,
+      description: description || "Espaço de trabalho",
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  await createOwnerMember(workspace.id, user.id);
+  await createDefaultPhases(workspace.id, user.id);
+  await createDefaultDepartments(workspace.id);
+  await createDefaultRequestTypes(workspace.id);
+
+  await createAuditLog({
+    workspaceId: workspace.id,
+    action: "Workspace criado",
+    menu: "Espaços",
+    entityType: "workspace",
+    entityId: workspace.id,
+    newValue: workspace,
+    detail: `Workspace criado: ${workspace.name}`,
+    userName,
+  });
+
+  return workspace;
+}
+
+export async function updateWorkspaceName({ workspaceId, name, oldWorkspace, userName }) {
+  const { data, error } = await supabase
+    .from("workspaces")
+    .update({ name })
+    .eq("id", workspaceId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    action: "Workspace editado",
+    menu: "Espaços",
+    entityType: "workspace",
+    entityId: workspaceId,
+    oldValue: oldWorkspace || null,
+    newValue: data,
+    detail: `Workspace renomeado para: ${name}`,
+    userName,
+  });
+
+  return data;
+}
+
+export async function deleteWorkspaceById({ workspaceId, oldWorkspace, userName }) {
+  await createAuditLog({
+    workspaceId,
+    action: "Workspace excluído",
+    menu: "Espaços",
+    entityType: "workspace",
+    entityId: workspaceId,
+    oldValue: oldWorkspace || null,
+    detail: `Workspace excluído: ${oldWorkspace?.title || oldWorkspace?.name || workspaceId}`,
+    userName,
+  });
+
+  const { error } = await supabase
+    .from("workspaces")
+    .delete()
+    .eq("id", workspaceId);
+
+  if (error) throw error;
+
+  return true;
+}
+
+export async function createPhase({ workspaceId, name, position, userName }) {
+  const user = await getCurrentSessionUser();
+
+  const { data, error } = await supabase
+    .from("kanban_phases")
+    .insert({
+      workspace_id: workspaceId,
+      name,
+      position: position || 0,
+      created_by: user.id,
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    action: "Fase criada",
+    menu: "Meus trabalhos",
+    entityType: "kanban_phase",
+    entityId: data.id,
+    newValue: data,
+    detail: `Fase criada: ${name}`,
+    userName,
+  });
+
+  return data;
+}
+
+export async function createCard({ workspaceId, phaseId, card, userName }) {
+  const user = await getCurrentSessionUser();
+
+  const { data: requestType } = await supabase
+    .from("request_types")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .eq("name", card.tag || "Processos")
+    .maybeSingle();
+
+  const { data: department } = await supabase
+    .from("form_departments")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .eq("name", card.department || "CS OPS")
+    .maybeSingle();
+
+  const { data, error } = await supabase
+    .from("cards")
+    .insert({
+      workspace_id: workspaceId,
+      phase_id: phaseId,
+      title: card.title,
+      description: card.description || "",
+      request_type_id: requestType?.id || null,
+      department_id: department?.id || null,
+      priority: card.priority || "Normal",
+      requester_name: card.requester || "",
+      requester_email: card.requesterEmail || "",
+      due_date: card.dueDate || null,
+      completed_at: card.phase === "Concluído" ? new Date().toISOString() : null,
+      status: card.phase === "Concluído" ? "completed" : "open",
+      original_form: card.originalForm || null,
+      created_by: user.id,
+      position: card.position || 0,
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    action: "Card criado",
+    menu: "Meus trabalhos",
+    entityType: "card",
+    entityId: data.id,
+    newValue: data,
+    detail: `Card criado: ${card.title}`,
+    userName,
+  });
+
+  return data;
+}
+
+export async function updateCard({ workspaceId, cardId, card, oldCard, phases, userName }) {
+  const phase = phases.find((item) => item.name === card.phase || item.id === card.phaseId);
+
+  const { data: requestType } = await supabase
+    .from("request_types")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .eq("name", card.tag || "Processos")
+    .maybeSingle();
+
+  const { data: department } = await supabase
+    .from("form_departments")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .eq("name", card.department || "CS OPS")
+    .maybeSingle();
+
+  const isCompleted = card.phase === "Concluído";
+
+  const { data, error } = await supabase
+    .from("cards")
+    .update({
+      phase_id: phase?.id || card.phaseId || null,
+      title: card.title,
+      description: card.description || "",
+      request_type_id: requestType?.id || null,
+      department_id: department?.id || null,
+      priority: card.priority || "Normal",
+      requester_name: card.requester || "",
+      requester_email: card.requesterEmail || "",
+      due_date: card.dueDate || null,
+      completed_at: isCompleted
+        ? card.finishedAt
+          ? new Date(card.finishedAt).toISOString()
+          : new Date().toISOString()
+        : null,
+      status: isCompleted ? "completed" : "open",
+      original_form: card.originalForm || null,
+      position: card.position || 0,
+    })
+    .eq("id", cardId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    action: "Card editado",
+    menu: "Meus trabalhos",
+    entityType: "card",
+    entityId: cardId,
+    oldValue: oldCard || null,
+    newValue: data,
+    detail: `Card editado: ${card.title}`,
+    userName,
+  });
+
+  return data;
+}
+
+export async function moveCardToPhase({
+  workspaceId,
+  cardId,
+  phaseId,
+  phaseName,
+  oldCard,
+  userName,
+}) {
+  const isCompleted = phaseName === "Concluído";
+
+  const { data, error } = await supabase
+    .from("cards")
+    .update({
+      phase_id: phaseId,
+      completed_at: isCompleted ? new Date().toISOString() : null,
+      status: isCompleted ? "completed" : "open",
+    })
+    .eq("id", cardId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    action: "Card movido",
+    menu: "Meus trabalhos",
+    entityType: "card",
+    entityId: cardId,
+    oldValue: oldCard || null,
+    newValue: data,
+    detail: `Card movido para ${phaseName}`,
+    userName,
+  });
+
+  return data;
+}
+
+export async function createRequestFromForm({
+  workspaceId,
+  phaseId,
+  form,
+  userName,
+}) {
+  const card = {
+    title: form.title,
+    description: form.description,
+    tag: form.tag,
+    department: form.department,
+    priority: form.priority,
+    requester: form.requester,
+    requesterEmail: form.requesterEmail,
+    dueDate: form.dueDate,
+    originalForm: form,
+  };
+
+  const data = await createCard({
+    workspaceId,
+    phaseId,
+    card,
+    userName,
+  });
+
+  await createAuditLog({
+    workspaceId,
+    action: "Pedido criado",
+    menu: "Formulário",
+    entityType: "card",
+    entityId: data.id,
+    newValue: data,
+    detail: `Solicitação aberta por ${form.requester}: ${form.title}`,
+    userName,
+  });
+
+  return data;
+}
+
+export async function refreshCurrentPortalData() {
+  return fetchPortalData();
+}
