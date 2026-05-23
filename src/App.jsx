@@ -47,6 +47,10 @@ import {
   createRequestType,
   updateRequestType,
   deleteRequestType,
+    inviteWorkspaceMember,
+  updateWorkspaceMember,
+  updateWorkspaceMemberNestedPermission,
+  removeWorkspaceMember,
 } from "./services/portalData.js";
 
 // ─── Login Screen ────────────────────────────────────────────────────────────
@@ -932,6 +936,85 @@ function AppShell() {
     });
   }
 
+    async function handleInvitePerson({ email, permission }) {
+    if (!workspace) return;
+    try {
+      await inviteWorkspaceMember({
+        workspaceId: workspace.id,
+        email,
+        permission,
+        userName: currentUser?.name || profileName,
+      });
+      notify("Pessoa adicionada ao espaço.");
+      await loadPortalData({ silent: true });
+    } catch (error) {
+      handleAsyncError(error, "Não foi possível adicionar a pessoa.");
+    }
+  }
+
+  async function handleUpdatePerson(userId, changes) {
+    if (!workspace) return;
+    const target = users.find((user) => user.id === userId);
+    try {
+      await updateWorkspaceMember({
+        workspaceId: workspace.id,
+        memberId: target.memberId,
+        changes,
+        oldMember: target,
+        userName: currentUser?.name || profileName,
+      });
+      notify("Permissões atualizadas.");
+      await loadPortalData({ silent: true });
+    } catch (error) {
+      handleAsyncError(error, "Não foi possivel atualizar a pessoa.");
+    }
+  }
+
+  async function handleUpdatePersonNested(userId, field, key, value) {
+    if (!workspace) return;
+    const target = users.find((user) => user.id === userId);
+    if (!target?.memberId) {
+      notify("Não foi possivel encontrar o vinculo dessa pessoa.", "error");
+      return;
+    }
+    try {
+      await updateWorkspaceMemberNestedPermission({
+        workspaceId: workspace.id,
+        memberId: target.memberId,
+        field,
+        key,
+        value,
+        oldMember: target,
+        userName: currentUser?.name || profileName,
+      });
+      notify("Permissão atualizada.");
+      await loadPortalData({ silent: true });
+    } catch (error) {
+      handleAsyncError(error, "Não foi possivel atualizar a permissão.");
+    }
+  }
+
+  async function handleRemovePerson(userId) {
+    if (!workspace) return;
+    const target = users.find((user) => user.id === userId);
+    if (!target?.memberId) {
+      notify("Não foi possível encontrar essa pessoa.", "error");
+      return;
+    }
+    try {
+      await removeWorkspaceMember({
+        workspaceId: workspace.id,
+        memberId: target.memberId,
+        oldMember: target,
+        userName: currentUser?.name || profileName,
+      });
+      notify("Pessoa removida.");
+      await loadPortalData({ silent: true });
+    } catch (error) {
+      handleAsyncError(error, "Não foi possível remover a pessoa.");
+    }
+  }
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F5F1EA] text-stone-700">
@@ -1075,6 +1158,11 @@ function AppShell() {
             onLog={addLog}
             notify={notify}
             requestText={requestText}
+                        requestConfirm={requestConfirm}
+            onInvitePerson={handleInvitePerson}
+            onUpdatePerson={handleUpdatePerson}
+            onUpdatePersonNested={handleUpdatePersonNested}
+            onRemovePerson={handleRemovePerson}
           />
         )}
 
