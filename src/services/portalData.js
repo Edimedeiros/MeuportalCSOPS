@@ -1024,3 +1024,365 @@ export async function removeWorkspaceMember({ workspaceId, memberId, oldMember, 
   if (error) throw error;
   return true;
 }
+
+
+// ─── Fluxogramas reais ──────────────────────────────────────────────────────
+
+const DEFAULT_FLOW_NODES = [
+  {
+    id: "inicio",
+    type: "input",
+    position: { x: 120, y: 120 },
+    data: { label: "Início" },
+  },
+  {
+    id: "atividade",
+    position: { x: 360, y: 120 },
+    data: { label: "Nova atividade" },
+  },
+  {
+    id: "fim",
+    type: "output",
+    position: { x: 620, y: 120 },
+    data: { label: "Fim" },
+  },
+];
+
+const DEFAULT_FLOW_EDGES = [
+  {
+    id: "inicio-atividade",
+    source: "inicio",
+    target: "atividade",
+  },
+  {
+    id: "atividade-fim",
+    source: "atividade",
+    target: "fim",
+  },
+];
+
+function cleanFlowName(value, fallback = "Novo fluxograma") {
+  const clean = String(value || "").trim();
+  return clean || fallback;
+}
+
+function mapFlowFolderFromDatabase(folder) {
+  return {
+    id: folder.id,
+    workspaceId: folder.workspace_id,
+    name: folder.name,
+    createdBy: folder.created_by,
+    createdAt: folder.created_at,
+    updatedAt: folder.updated_at,
+  };
+}
+
+function mapFlowchartFromDatabase(flowchart) {
+  return {
+    id: flowchart.id,
+    workspaceId: flowchart.workspace_id,
+    folderId: flowchart.folder_id,
+    name: flowchart.name,
+    nodes: Array.isArray(flowchart.nodes) ? flowchart.nodes : [],
+    edges: Array.isArray(flowchart.edges) ? flowchart.edges : [],
+    createdBy: flowchart.created_by,
+    createdAt: flowchart.created_at,
+    updatedAt: flowchart.updated_at,
+  };
+}
+
+export async function fetchFlowData({ workspaceId }) {
+  if (!workspaceId) {
+    return {
+      folders: [],
+      flowcharts: [],
+    };
+  }
+
+  const [foldersResult, flowchartsResult] = await Promise.all([
+    supabase
+      .from("flow_folders")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .order("created_at", { ascending: true }),
+
+    supabase
+      .from("flowcharts")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .order("created_at", { ascending: true }),
+  ]);
+
+  if (foldersResult.error) throw foldersResult.error;
+  if (flowchartsResult.error) throw flowchartsResult.error;
+
+  return {
+    folders: (foldersResult.data || []).map(mapFlowFolderFromDatabase),
+    flowcharts: (flowchartsResult.data || []).map(mapFlowchartFromDatabase),
+  };
+}
+
+export async function createFlowFolder({ workspaceId, name, userName }) {
+  const user = await getCurrentSessionUser();
+  const cleanName = cleanFlowName(name, "Nova pasta");
+
+  const { data, error } = await supabase
+    .from("flow_folders")
+    .insert({
+      workspace_id: workspaceId,
+      name: cleanName,
+      created_by: user.id,
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    action: "Pasta de fluxograma criada",
+    menu: "Fluxogramas",
+    entityType: "flow_folder",
+    entityId: data.id,
+    newValue: data,
+    detail: `Pasta criada: ${cleanName}`,
+    userName,
+  });
+
+  return mapFlowFolderFromDatabase(data);
+}
+
+export async function updateFlowFolder({ workspaceId, folderId, name, oldFolder, userName }) {
+  const cleanName = cleanFlowName(name, "Pasta sem nome");
+
+  const { data, error } = await supabase
+    .from("flow_folders")
+    .update({
+      name: cleanName,
+    })
+    .eq("id", folderId)
+    .eq("workspace_id", workspaceId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    action: "Pasta de fluxograma editada",
+    menu: "Fluxogramas",
+    entityType: "flow_folder",
+    entityId: folderId,
+    oldValue: oldFolder || null,
+    newValue: data,
+    detail: `Pasta editada: ${cleanName}`,
+    userName,
+  });
+
+  return mapFlowFolderFromDatabase(data);
+}
+
+export async function deleteFlowFolder({ workspaceId, folderId, oldFolder, userName }) {
+  await createAuditLog({
+    workspaceId,
+    action: "Pasta de fluxograma excluída",
+    menu: "Fluxogramas",
+    entityType: "flow_folder",
+    entityId: folderId,
+    oldValue: oldFolder || null,
+    detail: `Pasta excluída: ${oldFolder?.name || folderId}`,
+    userName,
+  });
+
+  const { error } = await supabase
+    .from("flow_folders")
+    .delete()
+    .eq("id", folderId)
+    .eq("workspace_id", workspaceId);
+
+  if (error) throw error;
+
+  return true;
+}
+
+export async function createFlowchart({
+  workspaceId,
+  folderId = null,
+  name,
+  nodes = DEFAULT_FLOW_NODES,
+  edges = DEFAULT_FLOW_EDGES,
+  userName,
+}) {
+  const user = await getCurrentSessionUser();
+  const cleanName = cleanFlowName(name, "Novo fluxograma");
+
+  const { data, error } = await supabase
+    .from("flowcharts")
+    .insert({
+      workspace_id: workspaceId,
+      folder_id: folderId || null,
+      name: cleanName,
+      nodes,
+      edges,
+      created_by: user.id,
+    })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    action: "Fluxograma criado",
+    menu: "Fluxogramas",
+    entityType: "flowchart",
+    entityId: data.id,
+    newValue: data,
+    detail: `Fluxograma criado: ${cleanName}`,
+    userName,
+  });
+
+  return mapFlowchartFromDatabase(data);
+}
+
+export async function updateFlowchartName({
+  workspaceId,
+  flowchartId,
+  name,
+  oldFlowchart,
+  userName,
+}) {
+  const cleanName = cleanFlowName(name, "Fluxograma sem nome");
+
+  const { data, error } = await supabase
+    .from("flowcharts")
+    .update({
+      name: cleanName,
+    })
+    .eq("id", flowchartId)
+    .eq("workspace_id", workspaceId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    action: "Fluxograma editado",
+    menu: "Fluxogramas",
+    entityType: "flowchart",
+    entityId: flowchartId,
+    oldValue: oldFlowchart || null,
+    newValue: data,
+    detail: `Fluxograma renomeado para: ${cleanName}`,
+    userName,
+  });
+
+  return mapFlowchartFromDatabase(data);
+}
+
+export async function moveFlowchartToFolder({
+  workspaceId,
+  flowchartId,
+  folderId,
+  oldFlowchart,
+  userName,
+}) {
+  const { data, error } = await supabase
+    .from("flowcharts")
+    .update({
+      folder_id: folderId || null,
+    })
+    .eq("id", flowchartId)
+    .eq("workspace_id", workspaceId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    action: "Fluxograma movido",
+    menu: "Fluxogramas",
+    entityType: "flowchart",
+    entityId: flowchartId,
+    oldValue: oldFlowchart || null,
+    newValue: data,
+    detail: "Fluxograma movido para outra pasta.",
+    userName,
+  });
+
+  return mapFlowchartFromDatabase(data);
+}
+
+export async function saveFlowchartData({
+  workspaceId,
+  flowchartId,
+  nodes = [],
+  edges = [],
+  oldFlowchart,
+  userName,
+}) {
+  const safeNodes = Array.isArray(nodes) ? nodes : [];
+  const safeEdges = Array.isArray(edges) ? edges : [];
+
+  const { data, error } = await supabase
+    .from("flowcharts")
+    .update({
+      nodes: safeNodes,
+      edges: safeEdges,
+    })
+    .eq("id", flowchartId)
+    .eq("workspace_id", workspaceId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    action: "Fluxograma salvo",
+    menu: "Fluxogramas",
+    entityType: "flowchart",
+    entityId: flowchartId,
+    oldValue: oldFlowchart || null,
+    newValue: {
+      id: data.id,
+      name: data.name,
+      nodesCount: safeNodes.length,
+      edgesCount: safeEdges.length,
+    },
+    detail: `Fluxograma salvo: ${data.name}`,
+    userName,
+  });
+
+  return mapFlowchartFromDatabase(data);
+}
+
+export async function deleteFlowchart({
+  workspaceId,
+  flowchartId,
+  oldFlowchart,
+  userName,
+}) {
+  await createAuditLog({
+    workspaceId,
+    action: "Fluxograma excluído",
+    menu: "Fluxogramas",
+    entityType: "flowchart",
+    entityId: flowchartId,
+    oldValue: oldFlowchart || null,
+    detail: `Fluxograma excluído: ${oldFlowchart?.name || flowchartId}`,
+    userName,
+  });
+
+  const { error } = await supabase
+    .from("flowcharts")
+    .delete()
+    .eq("id", flowchartId)
+    .eq("workspace_id", workspaceId);
+
+  if (error) throw error;
+
+  return true;
+}
