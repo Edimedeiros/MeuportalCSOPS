@@ -41,6 +41,12 @@ import {
   updateCard as dbUpdateCard,
   moveCardToPhase,
   createRequestFromForm,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment,
+  createRequestType,
+  updateRequestType,
+  deleteRequestType,
 } from "./services/portalData.js";
 
 // ─── Login Screen ────────────────────────────────────────────────────────────
@@ -853,7 +859,9 @@ function AppShell() {
     }
   }
 
-  async function addWorkspace() {
+  
+
+  async function handleCreateDepartment(name) {    if (!workspace) return;    try {      await createDepartment({ workspaceId: workspace.id, name, userName: currentUser?.name || profileName });      notify("Setor criado.");      await loadPortalData({ silent: true });    } catch (error) {      handleAsyncError(error, "Não foi possível criar o setor.");    }  }  async function handleUpdateDepartment(oldName, nextName) {    if (!workspace) return;    try {      await updateDepartment({ workspaceId: workspace.id, departmentName: oldName, nextName, userName: currentUser?.name || profileName });      notify("Setor atualizado.");      await loadPortalData({ silent: true });    } catch (error) {      handleAsyncError(error, "Não foi possível editar o setor.");    }  }  async function handleDeleteDepartment(name) {    if (!workspace) return;    try {      await deleteDepartment({ workspaceId: workspace.id, departmentName: name, userName: currentUser?.name || profileName });      notify("Setor excluído.");      await loadPortalData({ silent: true });    } catch (error) {      handleAsyncError(error, "Não foi possível excluir o setor.");    }  }  async function handleCreateServiceType(name) {    if (!workspace) return;    try {      await createRequestType({ workspaceId: workspace.id, name, color: "border-stone-200 bg-stone-50 text-stone-700", userName: currentUser?.name || profileName });      notify("Tipo de pedido criado.");      await loadPortalData({ silent: true });    } catch (error) {      handleAsyncError(error, "Não foi possível criar o tipo de pedido.");    }  }  async function handleUpdateServiceType(oldName, nextName) {    if (!workspace) return;    try {      await updateRequestType({ workspaceId: workspace.id, requestTypeName: oldName, nextName, userName: currentUser?.name || profileName });      notify("Tipo de pedido atualizado.");      await loadPortalData({ silent: true });    } catch (error) {      handleAsyncError(error, "Não foi possível editar o tipo de pedido.");    }  }  async function handleDeleteServiceType(name) {    if (!workspace) return;    try {      await deleteRequestType({ workspaceId: workspace.id, requestTypeName: name, userName: currentUser?.name || profileName });      notify("Tipo de pedido excluído.");      await loadPortalData({ silent: true });    } catch (error) {      handleAsyncError(error, "Não foi possível excluir o tipo de pedido.");    }  }  async function addWorkspace() {
     try {
       const created = await dbCreateWorkspace({
         name: "Novo espaço de trabalho",
@@ -1041,7 +1049,7 @@ function AppShell() {
             setServiceTypes={setServiceTypes}
             departments={departments}
             setDepartments={setDepartments}
-            onSubmitRequest={submitRequest}
+            onSubmitRequest={submitRequest}             onCreateDepartment={handleCreateDepartment}             onUpdateDepartment={handleUpdateDepartment}             onDeleteDepartment={handleDeleteDepartment}             onCreateServiceType={handleCreateServiceType}             onUpdateServiceType={handleUpdateServiceType}             onDeleteServiceType={handleDeleteServiceType}
             onLog={addLog}
             notify={notify}
             requestText={requestText}
