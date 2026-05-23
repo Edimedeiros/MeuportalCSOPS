@@ -878,3 +878,67 @@ export async function createRequestFromForm({
 export async function refreshCurrentPortalData() {
   return fetchPortalData();
 }
+
+
+// ─── Configurações reais do formulário ───────────────────────────────────────────
+export async function createDepartment({ workspaceId, name, userName }) {
+  const cleanName = String(name || "").trim();
+  if (!cleanName) { throw new Error("Informe o nome do setor."); }
+  const { data, error } = await supabase.from("form_departments").insert({ workspace_id: workspaceId, name: cleanName }).select("*").single();
+  if (error) throw error;
+  await createAuditLog({ workspaceId, action: "Setor criado", menu: "Formulário", entityType: "form_department", entityId: data.id, newValue: data, detail: `Setor criado: ${cleanName}`, userName });
+  return data;
+}
+
+export async function updateDepartment({ workspaceId, departmentName, nextName, userName }) {
+  const cleanNextName = String(nextName || "").trim();
+  if (!cleanNextName) { throw new Error("Informe o novo nome do setor."); }
+  const { data: current, error: findError } = await supabase.from("form_departments").select("*").eq("workspace_id", workspaceId).eq("name", departmentName).maybeSingle();
+  if (findError) throw findError;
+  if (!current) { throw new Error("Setor não encontrado."); }
+  const { data, error } = await supabase.from("form_departments").update({ name: cleanNextName }).eq("id", current.id).select("*").single();
+  if (error) throw error;
+  await createAuditLog({ workspaceId, action: "Setor editado", menu: "Formulário", entityType: "form_department", entityId: data.id, oldValue: current, newValue: data, detail: `Setor editado: ${departmentName} → ${cleanNextName}`, userName });
+  return data;
+}
+
+export async function deleteDepartment({ workspaceId, departmentName, userName }) {
+  const { data: current, error: findError } = await supabase.from("form_departments").select("*").eq("workspace_id", workspaceId).eq("name", departmentName).maybeSingle();
+  if (findError) throw findError;
+  if (!current) { throw new Error("Setor não encontrado."); }
+  await createAuditLog({ workspaceId, action: "Setor excluído", menu: "Formulário", entityType: "form_department", entityId: current.id, oldValue: current, detail: `Setor excluído: ${departmentName}`, userName });
+  const { error } = await supabase.from("form_departments").delete().eq("id", current.id);
+  if (error) throw error;
+  return true;
+}
+
+export async function createRequestType({ workspaceId, name, color, userName }) {
+  const cleanName = String(name || "").trim();
+  if (!cleanName) { throw new Error("Informe o nome do tipo de pedido."); }
+  const { data, error } = await supabase.from("request_types").insert({ workspace_id: workspaceId, name: cleanName, color: color || "border-stone-200 bg-stone-50 text-stone-700" }).select("*").single();
+  if (error) throw error;
+  await createAuditLog({ workspaceId, action: "Tipo de pedido criado", menu: "Formulário", entityType: "request_type", entityId: data.id, newValue: data, detail: `Tipo de pedido criado: ${cleanName}`, userName });
+  return data;
+}
+
+export async function updateRequestType({ workspaceId, requestTypeName, nextName, userName }) {
+  const cleanNextName = String(nextName || "").trim();
+  if (!cleanNextName) { throw new Error("Informe o novo nome do tipo de pedido."); }
+  const { data: current, error: findError } = await supabase.from("request_types").select("*").eq("workspace_id", workspaceId).eq("name", requestTypeName).maybeSingle();
+  if (findError) throw findError;
+  if (!current) { throw new Error("Tipo de pedido não encontrado."); }
+  const { data, error } = await supabase.from("request_types").update({ name: cleanNextName }).eq("id", current.id).select("*").single();
+  if (error) throw error;
+  await createAuditLog({ workspaceId, action: "Tipo de pedido editado", menu: "Formulário", entityType: "request_type", entityId: data.id, oldValue: current, newValue: data, detail: `Tipo de pedido editado: ${requestTypeName} → ${cleanNextName}`, userName });
+  return data;
+}
+
+export async function deleteRequestType({ workspaceId, requestTypeName, userName }) {
+  const { data: current, error: findError } = await supabase.from("request_types").select("*").eq("workspace_id", workspaceId).eq("name", requestTypeName).maybeSingle();
+  if (findError) throw findError;
+  if (!current) { throw new Error("Tipo de pedido não encontrado."); }
+  await createAuditLog({ workspaceId, action: "Tipo de pedido excluído", menu: "Formulário", entityType: "request_type", entityId: current.id, oldValue: current, detail: `Tipo de pedido excluído: ${requestTypeName}`, userName });
+  const { error } = await supabase.from("request_types").delete().eq("id", current.id);
+  if (error) throw error;
+  return true;
+}
