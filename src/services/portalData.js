@@ -942,3 +942,92 @@ export async function deleteRequestType({ workspaceId, requestTypeName, userName
   if (error) throw error;
   return true;
 }
+
+
+// ─── Pessoas e permissões reais ────────────────────────────────────────────
+const MEMBER_DEFAULT_MENU_ACCESS = { work: true, dash: true, form: false, flow: false, people: false, logs: false, settings: false };
+const MEMBER_DEFAULT_EDIT_PERMISSIONS = { createCard: false, moveCard: false, editCard: false, deleteCard: false, createPhase: false, editPhase: false, deletePhase: false, formSettings: false, flowEdit: false, peopleEdit: false };
+
+function normalizeMemberRole(permission) {
+  return permission === "edit" ? "editor" : "viewer";
+}
+
+export async function inviteWorkspaceMember({ workspaceId, email, permission = "view", userName }) {
+  const cleanEmail = String(email || "").trim().toLowerCase();
+  if (!cleanEmail || !cleanEmail.includes("@")) throw new Error("Informe um e-mail válido.");
+
+  const role = normalizeMemberRole(permission);
+  const { data: existingMember, error: existingError } = await supabase
+    .from("workspace_members")
+    .select("*")
+    .eq("workspace_id", workspaceId)
+    .eq("invited_email", cleanEmail)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+  if (existingMember) throw new Error("Essa pessoa já foi adicionada a este espaço.");
+
+  const { data: existingProfile, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("email", cleanEmail)
+    .maybeSingle();
+
+  if (profileError) throw profileError;
+
+  const payload = {
+    workspace_id: workspaceId,
+    invited_email: cleanEmail,
+    user_id: existingProfile?.id || null,
+    role,
+    card_scope: "all",
+    menu_access: MEMBER_DEFAULT_MENU_ACCESS,
+    edit_permissions: role === "editor" ? { ...MEMBER_DEFAULT_EDIT_PERMISSIONS, createCard: true, moveCard: true, editCard: true } : MEMBER_DEFAULT_EDIT_PERMISSIONS,
+  };
+
+  const { data, error } = await supabase.from("workspace_members").insert(payload).select("*").single();
+  if (error) throw error;
+
+  await createAuditLog({ workspaceId, action: "Pessoa criada", menu: "Pessoas", entityType: "workspace_member", entityId: data.id, newValue: data, detail: `Pessoa adicionada: ${cleanEmail}`, userName });
+  return data;
+}
+
+export async function updateWorkspaceMember({ workspaceId, memberId, changes, oldMember, userName }) {
+  const payload = {};
+  if (changes.permission) payload.role = normalizeMemberRole(changes.permission);
+  if (changes.role) payload.role = changes.role;
+  if (changes.cardScope) payload.card_scope = changes.cardScope;
+  if (changes.menuAccess) payload.menu_access = changes.menuAccess;
+  if (changes.editDetails) payload.edit_permissions = changes.editDetails;
+
+  if (!Object.keys(payload).length) return null;
+
+  const { data, error } = await supabase.from("workspace_members").update(payload).eq("id", memberId).select("*").single();
+  if (error) throw error;
+
+  await createAuditLog({ workspaceId, action: "Pessoa editada", menu: "Pessoas", entityType: "workspace_member", entityId: memberId, oldValue: oldMember || null, newValue: data, detail: "Permissões da pessoa foram atualizadas.", userName });
+  return data;
+}
+
+export async function updateWorkspaceMemberNestedPermission({ workspaceId, memberId, field, key, value, oldMember, userName }) {
+  if (!["menuAccess", "editDetails"].includes(field)) throw new Error("Campo de permissão inválido.");
+
+  const currentValue = field === "menuAccess" ? oldMember?.menuAccess || {} : oldMember?.editDetails || {};
+  const nextValue = { ...currentValue, [key]: value };
+  const column = field === "menuAccess" ? "menu_access" : "edit_permissions";
+
+  const { data, error } = await supabase.from("workspace_members").update({ [column]: nextValue }).eq("id", memberId).select("*").single();
+  if (error) throw error;
+
+  await createAuditLog({ workspaceId, action: "Permissão editada", menu: "Pessoas", entityType: "workspace_member", entityId: memberId, oldValue: oldMember || null, newValue: data, detail: `${field}.${key} = ${value}`, userName });
+  return data;
+}
+
+export async function removeWorkspaceMember({ workspaceId, memberId, oldMember, userName }) {
+  if (oldMember?.role === "owner") throw new Error("O dono do espaço não pode ser removido.");
+
+  await createAuditLog({ workspaceId, action: "Pessoa excluída", menu: "Pessoas", entityType: "workspace_member", entityId: memberId, oldValue: oldMember || null, detail: `Pessoa removida: ${oldMember?.email || memberId}`, userName });
+  const { error } = await supabase.from("workspace_members").delete().eq("id", memberId);
+  if (error) throw error;
+  return true;
+}
