@@ -252,7 +252,7 @@ export default function RequestFormView({
 )}
 
       {publicMode || tab === "form" ? (
-        <div className="grid gap-5 xl:grid-cols-[1fr_0.8fr]">
+        <div className={`grid gap-5 ${publicMode ? "" : "xl:grid-cols-[1fr_0.8fr]"}`}>
           <Card>
             <CardContent className="p-6">
               <p className="mb-5 text-sm text-stone-500">
@@ -409,48 +409,50 @@ export default function RequestFormView({
                   onClick={submit}
                   className="h-12 w-full rounded-2xl bg-stone-950 text-white hover:bg-stone-800"
                 >
-                  Enviar pedido para o quadro
+                  {publicMode ? "Enviar solicitação" : "Enviar pedido"}
                 </Button>
 
                 {submitted && (
                   <p className="rounded-2xl bg-emerald-50 p-3 text-sm text-emerald-700">
-                    Pedido enviado e criado no Kanban.
+                    {publicMode
+                      ? "Pedido criado e enviado com sucesso."}
                   </p>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <h4 className="mb-3 font-semibold text-stone-900">
-                Link de compartilhamento
-              </h4>
+          {!publicMode && (
+  <Card>
+    <CardContent className="p-6">
+      <h4 className="mb-3 font-semibold text-stone-900">
+        Link de compartilhamento
+      </h4>
 
-              <div className="break-all rounded-2xl bg-stone-50 p-4 text-sm text-stone-600">
-                {`${window.location.origin}/pedir-servico/cs-ops`}
-              </div>
+      <div className="break-all rounded-2xl bg-stone-50 p-4 text-sm text-stone-600">
+        {`${window.location.origin}/pedir-servico/cs-ops`}
+      </div>
 
-              <Button
-                onClick={copyShareLink}
-                variant="outline"
-                className="mt-3 rounded-2xl border-stone-200 bg-white"
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                Copiar link
-              </Button>
+      <Button
+        onClick={copyShareLink}
+        variant="outline"
+        className="mt-3 rounded-2xl border-stone-200 bg-white"
+      >
+        <Copy className="mr-2 h-4 w-4" />
+        Copiar link
+      </Button>
 
-              <div className="mt-6 rounded-2xl bg-stone-50 p-4 text-sm text-stone-600">
-                <strong className="text-stone-900">
-                  Resposta automática:
-                </strong>{" "}
-                quando você concluir um pedido feito pelo formulário, o sistema
-                simula o envio de um e-mail ao solicitante com a confirmação de
-                conclusão.
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="mt-6 rounded-2xl bg-stone-50 p-4 text-sm text-stone-600">
+        <strong className="text-stone-900">
+          Resposta automática:
+        </strong>{" "}
+        quando você concluir um pedido feito pelo formulário, o sistema
+        simula o envio de um e-mail ao solicitante com a confirmação de
+        conclusão.
+      </div>
+    </CardContent>
+  </Card>
+)}
       ) : (
         <div className="grid gap-5 xl:grid-cols-2">
           <Card>
