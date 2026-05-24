@@ -363,9 +363,18 @@ function AppShell() {
   const [tags, setTags] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState(null);
 
-  const [activeMenu, setActiveMenu] = useState("work");
+  const validMenus = ["work", "dash", "form", "flow", "people", "logs", "settings"];
+
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState(() => {
+    return localStorage.getItem("csops.activeWorkspaceId") || null;
+  });
+
+  const [activeMenu, setActiveMenu] = useState(() => {
+    const savedMenu = localStorage.getItem("csops.activeMenu");
+    return validMenus.includes(savedMenu) ? savedMenu : "work";
+  });
+
   const [search, setSearch] = useState("");
   const [selectedCard, setSelectedCard] = useState(null);
   const [profilePhoto, setProfilePhoto] = useState("");
@@ -375,6 +384,16 @@ function AppShell() {
   const [logs, setLogs] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [dialog, setDialog] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem("csops.activeMenu", activeMenu);
+  }, [activeMenu]);
+
+  useEffect(() => {
+    if (activeWorkspaceId) {
+      localStorage.setItem("csops.activeWorkspaceId", activeWorkspaceId);
+    }
+  }, [activeWorkspaceId]);
 
   const allMenuAccess = {
     work: true,
