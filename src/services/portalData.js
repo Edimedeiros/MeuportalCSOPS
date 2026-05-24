@@ -1386,3 +1386,40 @@ export async function deleteFlowchart({
 
   return true;
 }
+
+// ─── Formulário público ──────────────────────────────────────────────────────
+
+export async function fetchPublicRequestForm(slug = "cs-ops") {
+  const { data, error } = await supabase.rpc("get_public_request_form", {
+    p_slug: slug,
+  });
+
+  if (error) throw error;
+
+  return {
+    workspaceId: data?.workspaceId || null,
+    workspaceName: data?.workspaceName || "Portal CS OPS",
+    departments: Array.isArray(data?.departments) ? data.departments : [],
+    serviceTypes: Array.isArray(data?.requestTypes) ? data.requestTypes : [],
+    phases: Array.isArray(data?.phases) ? data.phases : ["A fazer"],
+  };
+}
+
+export async function submitPublicRequestForm(slug = "cs-ops", form) {
+  const { data, error } = await supabase.rpc("submit_public_request", {
+    p_slug: slug,
+    p_title: form.title,
+    p_description: form.description,
+    p_requester_name: form.requester,
+    p_requester_email: form.requesterEmail,
+    p_department: form.department,
+    p_request_type: form.tag,
+    p_priority: form.priority,
+    p_due_date: form.dueDate || null,
+    p_phase: form.phase || "A fazer",
+  });
+
+  if (error) throw error;
+
+  return data;
+}
