@@ -258,28 +258,24 @@ export default function FlowView({
   }
 
   async function createFlow() {
-    if (!canEdit) return;
+  if (!canEdit) return;
 
-    let folderId = activeFolderId;
+  const folderId = activeFolderId;
 
-    if (!folderId) {
-      const createdFolder = await onCreateFolder?.("Fluxos gerais");
-      folderId = createdFolder?.id;
-
-      if (folderId) {
-        setActiveFolderId(folderId);
-      }
-    }
-
-    const created = await onCreateFlowchart?.({
-      folderId,
-      name: "Novo fluxograma",
-    });
-
-    if (created) {
-      loadFlow(created);
-    }
+  if (!folderId) {
+    notify?.("Crie ou selecione uma pasta antes de criar um fluxograma.", "error");
+    return;
   }
+
+  const created = await onCreateFlowchart?.({
+    folderId,
+    name: "Novo fluxograma",
+  });
+
+  if (created) {
+    loadFlow(created);
+  }
+}
 
   function renameFlow(flow = activeFlow) {
     if (!canEdit || !flow) return;
