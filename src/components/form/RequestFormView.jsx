@@ -418,11 +418,12 @@ export default function RequestFormView({
                 </Button>
 
                 {submitted && (
-                  <p className="rounded-2xl bg-emerald-50 p-3 text-sm text-emerald-700">
-                    {publicMode
-                      ? "Pedido criado e enviado com sucesso."}
-                  </p>
-                )}
+  <p className="rounded-2xl bg-emerald-50 p-3 text-sm text-emerald-700">
+    {publicMode
+      ? "Pedido criado e enviado com sucesso."
+      : "Pedido enviado e criado no Kanban."}
+  </p>
+)}
               </div>
             </CardContent>
           </Card>
