@@ -256,6 +256,136 @@ function LoginScreen({
   );
 }
 
+function PublicRequestPage() {
+  const pathParts = window.location.pathname.split("/").filter(Boolean);
+  const slug = pathParts[1] || "cs-ops";
+
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [data, setData] = useState(null);
+  const [toasts, setToasts] = useState([]);
+
+  function notify(message, type = "success") {
+    const id = crypto.randomUUID();
+
+    setToasts((items) => [...items, { id, message, type }]);
+
+    window.setTimeout(() => {
+      setToasts((items) => items.filter((item) => item.id !== id));
+    }, 3200);
+  }
+
+  function closeToast(id) {
+    setToasts((items) => items.filter((item) => item.id !== id));
+  }
+
+  useEffect(() => {
+    async function loadPublicForm() {
+      try {
+        setLoading(true);
+
+        const result = await fetchPublicRequestForm(slug);
+
+        setData(result);
+      } catch (error) {
+        console.error(error);
+        notify(error?.message || "Não foi possível carregar o formulário.", "error");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPublicForm();
+  }, [slug]);
+
+  async function handleSubmitPublicRequest(form) {
+    try {
+      setSubmitting(true);
+
+      await submitPublicRequestForm(slug, form);
+
+      notify("Pedido enviado com sucesso. Obrigado!", "success");
+    } catch (error) {
+      console.error(error);
+      notify(error?.message || "Não foi possível enviar o pedido.", "error");
+      throw error;
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF8F5] text-stone-700">
+        Carregando formulário...
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF8F5] p-6">
+        <Toasts items={toasts} onClose={closeToast} />
+
+        <div className="rounded-[2rem] border border-red-100 bg-white p-8 shadow-xl">
+          <h1 className="text-2xl font-semibold text-stone-950">
+            Formulário não encontrado
+          </h1>
+
+          <p className="mt-2 text-sm text-stone-500">
+            Confira se o link recebido está correto.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const publicBoard = {
+    phases: data.phases?.length ? data.phases : ["A fazer"],
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FAF8F5] text-stone-900">
+      <Toasts items={toasts} onClose={closeToast} />
+
+      <header className="border-b border-stone-200 bg-white">
+        <div className="mx-auto max-w-5xl px-5 py-8">
+          <p className="mb-3 inline-flex rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
+            Formulário público
+          </p>
+
+          <h1 className="text-3xl font-semibold text-stone-950">
+            Solicitar serviço
+          </h1>
+
+          <p className="mt-2 text-sm text-stone-500">
+            Preencha os dados abaixo para abrir uma solicitação para{" "}
+            {data.workspaceName}.
+          </p>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-5xl px-5 py-6">
+        {submitting && (
+          <div className="mb-4 rounded-2xl border border-stone-200 bg-white p-4 text-sm text-stone-500">
+            Enviando pedido...
+          </div>
+        )}
+
+        <RequestFormView
+          publicMode
+          board={publicBoard}
+          departments={data.departments}
+          serviceTypes={data.serviceTypes}
+          tags={data.serviceTypes.map((name) => ({ name }))}
+          onSubmitRequest={handleSubmitPublicRequest}
+          notify={notify}
+        />
+      </main>
+    </div>
+  );
+}
+
 // ─── Feedback profissional ──────────────────────────────────────────────────
 
 function Toasts({ items = [], onClose }) {
@@ -1373,7 +1503,9 @@ async function handleDeleteFlowchart(flowchartId) {
   }
 }
 
-  const isPublicRequestRoute = window.location.pathname.startsWith("/pedir-servico/");
+  const isPublicRequestRoute =
+  window.location.pathname.startsWith("/formulario-solicitacao/") ||
+  window.location.pathname.startsWith("/pedir-servico/");
 
 if (isPublicRequestRoute) {
   return <PublicRequestPage />;
