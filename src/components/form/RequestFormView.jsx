@@ -94,7 +94,10 @@ export default function RequestFormView({
       return;
     }
 
-    await onSubmitRequest(form);
+    await onSubmitRequest({
+  ...form,
+  phase: publicMode ? "A fazer" : form.phase,
+});
 
     setSubmitted(true);
     setError("");
@@ -218,7 +221,7 @@ export default function RequestFormView({
   }
 
   function copyShareLink() {
-    const link = `${window.location.origin}/pedir-servico/cs-ops`;
+    const link = `${window.location.origin}/Enviar-Solicitacao/cs-ops`;
 
     navigator.clipboard
       ?.writeText(link)
@@ -356,7 +359,7 @@ export default function RequestFormView({
                   </div>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className={`grid gap-3 ${publicMode ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
                   <div>
                     <Label>Prioridade</Label>
                     <select
@@ -384,20 +387,22 @@ export default function RequestFormView({
                   </div>
 
                   <div>
-                    <Label>Fase inicial</Label>
-                    <select
-                      value={form.phase}
-                      onChange={(event) =>
-                        setForm({ ...form, phase: event.target.value })
-                      }
-                      className="h-12 w-full rounded-2xl border border-stone-200 bg-white px-3 text-sm outline-none"
-                    >
-                      {phases.map((phase) => (
-                        <option key={phase}>{phase}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                   {!publicMode && (
+  <div>
+    <Label>Fase inicial</Label>
+    <select
+      value={form.phase}
+      onChange={(event) =>
+        setForm({ ...form, phase: event.target.value })
+      }
+      className="h-12 w-full rounded-2xl border border-stone-200 bg-white px-3 text-sm outline-none"
+    >
+      {phases.map((phase) => (
+        <option key={phase}>{phase}</option>
+      ))}
+    </select>
+  </div>
+)}
 
                 {error && (
                   <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">
@@ -422,7 +427,7 @@ export default function RequestFormView({
             </CardContent>
           </Card>
 
-          {!publicMode && (
+ {!publicMode && (
   <Card>
     <CardContent className="p-6">
       <h4 className="mb-3 font-semibold text-stone-900">
@@ -430,7 +435,7 @@ export default function RequestFormView({
       </h4>
 
       <div className="break-all rounded-2xl bg-stone-50 p-4 text-sm text-stone-600">
-        {`${window.location.origin}/pedir-servico/cs-ops`}
+        {`${window.location.origin}/Enviar-Solicitacao/cs-ops`}
       </div>
 
       <Button
