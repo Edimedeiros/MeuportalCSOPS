@@ -1182,13 +1182,13 @@ function AppShell() {
               requestConfirm={requestConfirm}
               onCreateFolder={async (name) => {
                 const folder = await createFlowFolder({ workspaceId: workspace.id, name, userName: currentUser?.name || profileName });
-                return folder;
-              await loadFlowData();
+                              await loadFlowData();
+                    return folder;
               }}
               onUpdateFolder={async (folderId, name, oldFolder) => {
                 const folder = await updateFlowFolder({ workspaceId: workspace.id, folderId, name, oldFolder, userName: currentUser?.name || profileName });
-                return folder;
               await loadFlowData();
+                    return folder;
               }}
               onDeleteFolder={async (folderId, oldFolder) => {
                 await deleteFlowFolder({ workspaceId: workspace.id, folderId, oldFolder, userName: currentUser?.name || profileName });
@@ -1201,18 +1201,18 @@ function AppShell() {
               }}
               onUpdateFlowchartName={async (flowchartId, name, oldFlowchart) => {
                 const flow = await updateFlowchartName({ workspaceId: workspace.id, flowchartId, name, oldFlowchart, userName: currentUser?.name || profileName });
-                return flow;
               await loadFlowData();
+                    return flow;
               }}
               onMoveFlowchart={async (flowchartId, folderId, oldFlowchart) => {
                 const flow = await moveFlowchartToFolder({ workspaceId: workspace.id, flowchartId, folderId, oldFlowchart, userName: currentUser?.name || profileName });
-                return flow;
               await loadFlowData();
+                    return flow;
               }}
               onSaveFlowchartData={async (flowchartId, nodes, edges, oldFlowchart) => {
                 const flow = await saveFlowchartData({ workspaceId: workspace.id, flowchartId, nodes, edges, oldFlowchart, userName: currentUser?.name || profileName });
-                return flow;
               await loadFlowData();
+                    return flow;
               }}
               onDeleteFlowchart={async (flowchartId, oldFlowchart) => {
                 await deleteFlowchart({ workspaceId: workspace.id, flowchartId, oldFlowchart, userName: currentUser?.name || profileName });
