@@ -56,7 +56,7 @@ export default function Sidebar({
     : allMenuIds.filter((id) => currentUser?.menuAccess?.[id]);
 
   return (
-    <aside className="hidden w-72 shrink-0 border-r border-stone-200 bg-[#F7F4EF] p-5 lg:block overflow-y-auto">
+    <aside className="flex w-72 shrink-0 flex-col border-r border-stone-200 bg-[#F7F4EF] p-5 overflow-y-auto">
       <div className="mb-6 flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-stone-950 text-sm font-semibold text-white">
           {profilePhoto ? (
