@@ -1047,6 +1047,44 @@ function AppShell() {
     if (workspace?.id) loadFlowData();
   }, [workspace?.id]);
 
+async function handleCreateFlowFolder(name) {
+  // código da função
+}
+
+async function handleUpdateFlowFolder(folderId, name) {
+  // código da função
+}
+
+async function handleDeleteFlowFolder(folderId) {
+  // código da função
+}
+
+async function handleCreateFlowchart({ folderId, name }) {
+  // código da função
+}
+
+async function handleUpdateFlowchartName(flowchartId, name) {
+  // código da função
+}
+
+async function handleMoveFlowchartToFolder(flowchartId, folderId) {
+  // código da função
+}
+
+async function handleSaveFlowchartData(flowchartId, nodes, edges) {
+  // código da função
+}
+
+async function handleDeleteFlowchart(flowchartId) {
+  // código da função
+}
+
+if (authLoading) {
+  return (
+    ...
+  );
+}
+  
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F5F1EA] text-stone-700">
@@ -1173,60 +1211,25 @@ function AppShell() {
         )}
 
         {visibleMenu === "flow" && (
-<FlowView
-              workspaceId={workspace?.id || null}
-              onLog={addLog}
-              canEdit={canEdit}
-              notify={notify}
-              requestText={requestText}
-              requestConfirm={requestConfirm}
-              onCreateFolder={async (name) => {
-                const folder = await createFlowFolder({ workspaceId: workspace.id, name, userName: currentUser?.name || profileName });
-                              await loadFlowData();
-                    return folder;
-              }}
-              onUpdateFolder={async (folderId, name, oldFolder) => {
-                const folder = await updateFlowFolder({ workspaceId: workspace.id, folderId, name, oldFolder, userName: currentUser?.name || profileName });
-              await loadFlowData();
-                    return folder;
-              }}
-              onDeleteFolder={async (folderId, oldFolder) => {
-                await deleteFlowFolder({ workspaceId: workspace.id, folderId, oldFolder, userName: currentUser?.name || profileName });
-              await loadFlowData();
-              }}
-              onCreateFlowchart={async (folderId, name) => {
-                const flow = await createFlowchart({ workspaceId: workspace.id, folderId, name, userName: currentUser?.name || profileName });
-              await loadFlowData();
-                return flow;
-              }}
-              onUpdateFlowchartName={async (flowchartId, name, oldFlowchart) => {
-                const flow = await updateFlowchartName({ workspaceId: workspace.id, flowchartId, name, oldFlowchart, userName: currentUser?.name || profileName });
-              await loadFlowData();
-                    return flow;
-              }}
-              onMoveFlowchart={async (flowchartId, folderId, oldFlowchart) => {
-                const flow = await moveFlowchartToFolder({ workspaceId: workspace.id, flowchartId, folderId, oldFlowchart, userName: currentUser?.name || profileName });
-              await loadFlowData();
-                    return flow;
-              }}
-              onSaveFlowchartData={async (flowchartId, nodes, edges, oldFlowchart) => {
-                const flow = await saveFlowchartData({ workspaceId: workspace.id, flowchartId, nodes, edges, oldFlowchart, userName: currentUser?.name || profileName });
-              await loadFlowData();
-                    return flow;
-              }}
-              onDeleteFlowchart={async (flowchartId, oldFlowchart) => {
-                await deleteFlowchart({ workspaceId: workspace.id, flowchartId, oldFlowchart, userName: currentUser?.name || profileName });
-              await loadFlowData();
-              }}
-              onFetchFlowData={async () => {
-                if (!workspace?.id) return { folders: [], flowcharts: [] };
-                return await fetchFlowData({ workspaceId: workspace.id });
-              }}
-              folders={flowFolders}
-              flowcharts={flowcharts}
-              loading={flowLoading}
-            />
-                )}
+  <FlowView
+    workspaceId={workspace?.id || null}
+    folders={flowFolders}
+    flowcharts={flowcharts}
+    loading={flowLoading}
+    canEdit={canEdit}
+    notify={notify}
+    requestText={requestText}
+    requestConfirm={requestConfirm}
+    onCreateFolder={handleCreateFlowFolder}
+    onUpdateFolder={handleUpdateFlowFolder}
+    onDeleteFolder={handleDeleteFlowFolder}
+    onCreateFlowchart={handleCreateFlowchart}
+    onUpdateFlowchartName={handleUpdateFlowchartName}
+    onMoveFlowchartToFolder={handleMoveFlowchartToFolder}
+    onSaveFlowchartData={handleSaveFlowchartData}
+    onDeleteFlowchart={handleDeleteFlowchart}
+  />
+)}
 
         {visibleMenu === "people" && (
           <PeopleView
