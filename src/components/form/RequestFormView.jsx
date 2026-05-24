@@ -6,6 +6,7 @@ import TextInput from "../ui/TextInput.jsx";
 import { Label } from "../ui/Tooltip.jsx";
 
 export default function RequestFormView({
+  publicMode = false,
   board,
   tags = [],
   serviceTypes = [],
@@ -227,28 +228,30 @@ export default function RequestFormView({
 
   return (
     <section className="flex-1 overflow-y-auto p-4 md:p-6">
-      <div className="mb-5 flex flex-wrap items-center justify-end gap-3">
-        <div className="rounded-2xl border border-stone-200 bg-white p-1">
-          <button
-            onClick={() => setTab("form")}
-            className={`rounded-xl px-4 py-2 text-sm ${
-              tab === "form" ? "bg-stone-950 text-white" : "text-stone-500"
-            }`}
-          >
-            Formulário
-          </button>
-          <button
-            onClick={() => setTab("settings")}
-            className={`rounded-xl px-4 py-2 text-sm ${
-              tab === "settings" ? "bg-stone-950 text-white" : "text-stone-500"
-            }`}
-          >
-            Configurações
-          </button>
-        </div>
-      </div>
+      {!publicMode && (
+  <div className="mb-5 flex flex-wrap items-center justify-end gap-3">
+    <div className="rounded-2xl border border-stone-200 bg-white p-1">
+      <button
+        onClick={() => setTab("form")}
+        className={`rounded-xl px-4 py-2 text-sm ${
+          tab === "form" ? "bg-stone-950 text-white" : "text-stone-500"
+        }`}
+      >
+        Formulário
+      </button>
+      <button
+        onClick={() => setTab("settings")}
+        className={`rounded-xl px-4 py-2 text-sm ${
+          tab === "settings" ? "bg-stone-950 text-white" : "text-stone-500"
+        }`}
+      >
+        Configurações
+      </button>
+    </div>
+  </div>
+)}
 
-      {tab === "form" ? (
+      {publicMode || tab === "form" ? (
         <div className="grid gap-5 xl:grid-cols-[1fr_0.8fr]">
           <Card>
             <CardContent className="p-6">
