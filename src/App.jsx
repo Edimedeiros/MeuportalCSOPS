@@ -1504,7 +1504,7 @@ async function handleDeleteFlowchart(flowchartId) {
 }
 
   const isPublicRequestRoute =
-  window.location.pathname.startsWith("/formulario-solicitacao/") ||
+  window.location.pathname.startsWith("/Enviar-Solicitacao/")
   window.location.pathname.startsWith("/pedir-servico/");
 
 if (isPublicRequestRoute) {
