@@ -360,49 +360,49 @@ export default function RequestFormView({
                 </div>
 
                 <div className={`grid gap-3 ${publicMode ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
-                  <div>
-                    <Label>Prioridade</Label>
-                    <select
-                      value={form.priority}
-                      onChange={(event) =>
-                        setForm({ ...form, priority: event.target.value })
-                      }
-                      className="h-12 w-full rounded-2xl border border-stone-200 bg-white px-3 text-sm outline-none"
-                    >
-                      <option>Normal</option>
-                      <option>Prioridade</option>
-                      <option>Urgente</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <Label>Prazo desejado</Label>
-                    <TextInput
-                      type="date"
-                      value={form.dueDate}
-                      onChange={(event) =>
-                        setForm({ ...form, dueDate: event.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div>
-                   {!publicMode && (
   <div>
-    <Label>Fase inicial</Label>
+    <Label>Prioridade</Label>
     <select
-      value={form.phase}
+      value={form.priority}
       onChange={(event) =>
-        setForm({ ...form, phase: event.target.value })
+        setForm({ ...form, priority: event.target.value })
       }
       className="h-12 w-full rounded-2xl border border-stone-200 bg-white px-3 text-sm outline-none"
     >
-      {phases.map((phase) => (
-        <option key={phase}>{phase}</option>
-      ))}
+      <option>Normal</option>
+      <option>Prioridade</option>
+      <option>Urgente</option>
     </select>
   </div>
-)}
+
+  <div>
+    <Label>Prazo desejado</Label>
+    <TextInput
+      type="date"
+      value={form.dueDate}
+      onChange={(event) =>
+        setForm({ ...form, dueDate: event.target.value })
+      }
+    />
+  </div>
+
+  {!publicMode && (
+    <div>
+      <Label>Fase inicial</Label>
+      <select
+        value={form.phase}
+        onChange={(event) =>
+          setForm({ ...form, phase: event.target.value })
+        }
+        className="h-12 w-full rounded-2xl border border-stone-200 bg-white px-3 text-sm outline-none"
+      >
+        {phases.map((phase) => (
+          <option key={phase}>{phase}</option>
+        ))}
+      </select>
+    </div>
+  )}
+</div>
 
                 {error && (
                   <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">
@@ -457,8 +457,9 @@ export default function RequestFormView({
         conclusão.
       </div>
     </CardContent>
-  </Card>
+   </Card>
 )}
+</div>
       ) : (
         <div className="grid gap-5 xl:grid-cols-2">
           <Card>
