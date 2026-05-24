@@ -1048,41 +1048,187 @@ function AppShell() {
   }, [workspace?.id]);
 
 async function handleCreateFlowFolder(name) {
-  // código da função
+  if (!workspace?.id) return null;
+
+  try {
+    const created = await createFlowFolder({
+      workspaceId: workspace.id,
+      name,
+      userName: currentUser?.name || profileName,
+    });
+
+    notify("Pasta criada.");
+    await loadFlowData({ silent: true });
+
+    return created;
+  } catch (error) {
+    handleAsyncError(error, "Não foi possível criar a pasta.");
+    return null;
+  }
 }
 
 async function handleUpdateFlowFolder(folderId, name) {
-  // código da função
+  if (!workspace?.id) return null;
+
+  const oldFolder = flowFolders.find((folder) => folder.id === folderId);
+
+  try {
+    const updated = await updateFlowFolder({
+      workspaceId: workspace.id,
+      folderId,
+      name,
+      oldFolder,
+      userName: currentUser?.name || profileName,
+    });
+
+    notify("Pasta atualizada.");
+    await loadFlowData({ silent: true });
+
+    return updated;
+  } catch (error) {
+    handleAsyncError(error, "Não foi possível editar a pasta.");
+    return null;
+  }
 }
 
 async function handleDeleteFlowFolder(folderId) {
-  // código da função
+  if (!workspace?.id) return false;
+
+  const oldFolder = flowFolders.find((folder) => folder.id === folderId);
+
+  try {
+    await deleteFlowFolder({
+      workspaceId: workspace.id,
+      folderId,
+      oldFolder,
+      userName: currentUser?.name || profileName,
+    });
+
+    notify("Pasta excluída.");
+    await loadFlowData({ silent: true });
+
+    return true;
+  } catch (error) {
+    handleAsyncError(error, "Não foi possível excluir a pasta.");
+    return false;
+  }
 }
 
 async function handleCreateFlowchart({ folderId, name }) {
-  // código da função
+  if (!workspace?.id) return null;
+
+  try {
+    const created = await createFlowchart({
+      workspaceId: workspace.id,
+      folderId,
+      name,
+      userName: currentUser?.name || profileName,
+    });
+
+    notify("Fluxograma criado.");
+    await loadFlowData({ silent: true });
+
+    return created;
+  } catch (error) {
+    handleAsyncError(error, "Não foi possível criar o fluxograma.");
+    return null;
+  }
 }
 
 async function handleUpdateFlowchartName(flowchartId, name) {
-  // código da função
+  if (!workspace?.id) return null;
+
+  const oldFlowchart = flowcharts.find((flow) => flow.id === flowchartId);
+
+  try {
+    const updated = await updateFlowchartName({
+      workspaceId: workspace.id,
+      flowchartId,
+      name,
+      oldFlowchart,
+      userName: currentUser?.name || profileName,
+    });
+
+    notify("Fluxograma atualizado.");
+    await loadFlowData({ silent: true });
+
+    return updated;
+  } catch (error) {
+    handleAsyncError(error, "Não foi possível editar o fluxograma.");
+    return null;
+  }
 }
 
 async function handleMoveFlowchartToFolder(flowchartId, folderId) {
-  // código da função
+  if (!workspace?.id) return null;
+
+  const oldFlowchart = flowcharts.find((flow) => flow.id === flowchartId);
+
+  try {
+    const moved = await moveFlowchartToFolder({
+      workspaceId: workspace.id,
+      flowchartId,
+      folderId,
+      oldFlowchart,
+      userName: currentUser?.name || profileName,
+    });
+
+    notify("Fluxograma movido.");
+    await loadFlowData({ silent: true });
+
+    return moved;
+  } catch (error) {
+    handleAsyncError(error, "Não foi possível mover o fluxograma.");
+    return null;
+  }
 }
 
 async function handleSaveFlowchartData(flowchartId, nodes, edges) {
-  // código da função
+  if (!workspace?.id) return null;
+
+  const oldFlowchart = flowcharts.find((flow) => flow.id === flowchartId);
+
+  try {
+    const saved = await saveFlowchartData({
+      workspaceId: workspace.id,
+      flowchartId,
+      nodes,
+      edges,
+      oldFlowchart,
+      userName: currentUser?.name || profileName,
+    });
+
+    notify("Fluxograma salvo.");
+    await loadFlowData({ silent: true });
+
+    return saved;
+  } catch (error) {
+    handleAsyncError(error, "Não foi possível salvar o fluxograma.");
+    return null;
+  }
 }
 
 async function handleDeleteFlowchart(flowchartId) {
-  // código da função
-}
+  if (!workspace?.id) return false;
 
-if (authLoading) {
-  return (
-    ...
-  );
+  const oldFlowchart = flowcharts.find((flow) => flow.id === flowchartId);
+
+  try {
+    await deleteFlowchart({
+      workspaceId: workspace.id,
+      flowchartId,
+      oldFlowchart,
+      userName: currentUser?.name || profileName,
+    });
+
+    notify("Fluxograma excluído.");
+    await loadFlowData({ silent: true });
+
+    return true;
+  } catch (error) {
+    handleAsyncError(error, "Não foi possível excluir o fluxograma.");
+    return false;
+  }
 }
   
   if (authLoading) {
